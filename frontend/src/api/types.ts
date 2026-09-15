@@ -105,7 +105,6 @@ export interface Recipe {
   steps: RecipeStep[]
   ingredients: RecipeIngredient[]
   tags: string[]
-  version: number
 }
 
 export interface RecipeRequest {
@@ -115,6 +114,53 @@ export interface RecipeRequest {
   steps: RecipeStep[]
   ingredients: RecipeIngredientRequest[]
   tags: string[]
+}
+
+export interface RecipeSummary {
+  id: number
+  name: string
+  servings: number | null
+}
+
+export interface Menu {
+  id: number
+  name: string
+  recipes: RecipeSummary[]
+}
+
+export interface MenuRequest {
+  name: string
+  recipeIds: number[]
+}
+
+export type MealPlanItemType = 'RECIPE' | 'MENU'
+
+export interface MealPlanItem {
+  id: number
+  itemType: MealPlanItemType
+  recipe: RecipeSummary | null
+  menu: Menu | null
+}
+
+export interface MealPlanItemRequest {
+  itemType: MealPlanItemType
+  recipeId: number | null
+  menuId: number | null
+}
+
+export interface MealPlan {
+  id: number
+  name: string
+  startDate: string | null
+  endDate: string | null
+  items: MealPlanItem[]
+}
+
+export interface MealPlanRequest {
+  name: string
+  startDate?: string | null
+  endDate?: string | null
+  items: MealPlanItemRequest[]
 }
 
 export interface ApiError {
