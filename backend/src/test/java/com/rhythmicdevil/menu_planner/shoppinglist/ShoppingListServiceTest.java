@@ -28,6 +28,10 @@ class ShoppingListServiceTest {
         return new Ingredient(name, IngredientCategory.OTHER);
     }
 
+    private static Ingredient ingredient(String name, IngredientCategory category) {
+        return new Ingredient(name, category);
+    }
+
     private static RecipeIngredient rawLine(Ingredient ingredient, String amount, String unit) {
         RecipeIngredient line = new RecipeIngredient(ingredient, new BigDecimal(amount), unit);
         line.setStateCondition(StateCondition.RAW);
@@ -120,6 +124,28 @@ class ShoppingListServiceTest {
         List<Recipe> flattened = ShoppingListService.flattenRecipes(mealPlan);
 
         assertThat(flattened).containsExactly(salsa);
+    }
+
+    @Test
+    void groupsByCategoryOrderThenAlphabeticallyWithinCategory() {
+        // "Zucchini" would sort before "Basil" alphabetically, but PRODUCE items should
+        // stay together and sorted among themselves; BAKING_AND_SPICES items come after,
+        // per the category enum's declared (grocery-store walking) order.
+        Ingredient zucchini = ingredient("zucchini", IngredientCategory.PRODUCE);
+        Ingredient basil = ingredient("basil", IngredientCategory.PRODUCE);
+        Ingredient cinnamon = ingredient("cinnamon", IngredientCategory.BAKING_AND_SPICES);
+
+        Recipe recipe = recipeWith("Everything",
+                rawLine(zucchini, "1", "each"),
+                rawLine(basil, "1", "each"),
+                rawLine(cinnamon, "1", "each"));
+
+        List<ShoppingListItemResponse> items = ShoppingListService.computeItems(List.of(recipe));
+
+        assertThat(items).extracting(ShoppingListItemResponse::ingredientName)
+                .containsExactly("basil", "zucchini", "cinnamon");
+        assertThat(items).extracting(ShoppingListItemResponse::category)
+                .containsExactly(IngredientCategory.PRODUCE, IngredientCategory.PRODUCE, IngredientCategory.BAKING_AND_SPICES);
     }
 
     @Test

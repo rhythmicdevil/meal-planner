@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Button, Group, Modal, Select, Stack, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useCreateIngredient, useIngredients } from '../api/ingredients'
-import { INGREDIENT_CATEGORIES, type IngredientCategory } from '../api/types'
+import { INGREDIENT_CATEGORIES, INGREDIENT_CATEGORY_LABELS, type IngredientCategory } from '../api/types'
 
 interface IngredientPickerProps {
   value: number | null
@@ -72,7 +72,11 @@ export function IngredientPicker({ value, onChange, error }: IngredientPickerPro
             <Select
               label="Category"
               required
-              data={INGREDIENT_CATEGORIES}
+              data={INGREDIENT_CATEGORIES.map((category) => ({
+                value: category,
+                label: INGREDIENT_CATEGORY_LABELS[category],
+              }))}
+              searchable
               {...quickAddForm.getInputProps('category')}
             />
             <TextInput

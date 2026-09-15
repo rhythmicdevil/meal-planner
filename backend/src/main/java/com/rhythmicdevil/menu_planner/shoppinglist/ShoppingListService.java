@@ -119,6 +119,7 @@ public class ShoppingListService {
             items.add(new ShoppingListItemResponse(
                     bucket.ingredient.getId(),
                     bucket.ingredient.getName(),
+                    bucket.ingredient.getCategory(),
                     displayAmount,
                     bucket.displayUnit,
                     false,
@@ -131,6 +132,7 @@ public class ShoppingListService {
             items.add(new ShoppingListItemResponse(
                     ingredient.getId(),
                     ingredient.getName(),
+                    ingredient.getCategory(),
                     null,
                     null,
                     true,
@@ -138,7 +140,10 @@ public class ShoppingListService {
             ));
         }
 
-        items.sort(Comparator.comparing(ShoppingListItemResponse::ingredientName, String.CASE_INSENSITIVE_ORDER));
+        // grouped by category (in its declared enum order -- produce, dairy, pantry,
+        // protein, spice, other), then alphabetically by ingredient within each group.
+        items.sort(Comparator.comparing(ShoppingListItemResponse::category)
+                .thenComparing(ShoppingListItemResponse::ingredientName, String.CASE_INSENSITIVE_ORDER));
         return items;
     }
 }

@@ -4,9 +4,9 @@ import { parseIngredientLine } from './parseIngredientLine'
 
 const catalog: Ingredient[] = [
   { id: 1, name: 'cherry tomatoes', aliases: ['cherry tomato'], defaultUnit: null, category: 'PRODUCE' },
-  { id: 2, name: 'olive oil', aliases: [], defaultUnit: null, category: 'PANTRY' },
-  { id: 3, name: 'salt', aliases: ['kosher salt'], defaultUnit: null, category: 'SPICE' },
-  { id: 4, name: 'black pepper', aliases: ['pepper'], defaultUnit: null, category: 'SPICE' },
+  { id: 2, name: 'olive oil', aliases: [], defaultUnit: null, category: 'CONDIMENTS_AND_DRESSINGS' },
+  { id: 3, name: 'salt', aliases: ['kosher salt'], defaultUnit: null, category: 'BAKING_AND_SPICES' },
+  { id: 4, name: 'black pepper', aliases: ['pepper'], defaultUnit: null, category: 'BAKING_AND_SPICES' },
 ]
 
 describe('parseIngredientLine', () => {

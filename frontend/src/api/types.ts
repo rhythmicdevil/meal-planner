@@ -1,13 +1,65 @@
-export type IngredientCategory = 'PRODUCE' | 'DAIRY' | 'PANTRY' | 'PROTEIN' | 'SPICE' | 'OTHER'
+export type IngredientCategory =
+  | 'PRODUCE'
+  | 'BAKERY'
+  | 'DELI_AND_PREPARED_FOODS'
+  | 'MEAT_AND_SEAFOOD'
+  | 'DAIRY'
+  | 'BREAKFAST_AND_CEREAL'
+  | 'BAKING_AND_SPICES'
+  | 'CANNED_GOODS_AND_SOUP'
+  | 'PASTA_RICE_AND_SAUCES'
+  | 'CONDIMENTS_AND_DRESSINGS'
+  | 'SNACKS'
+  | 'BEVERAGES'
+  | 'INTERNATIONAL_ETHNIC'
+  | 'FROZEN_FOODS'
+  | 'HOUSEHOLD_AND_CLEANING'
+  | 'PERSONAL_CARE_AND_HEALTH'
+  | 'PET_AND_BABY'
+  | 'OTHER'
 
+// Grocery-store walking order -- the backend sorts shopping list items this same way.
 export const INGREDIENT_CATEGORIES: IngredientCategory[] = [
   'PRODUCE',
+  'BAKERY',
+  'DELI_AND_PREPARED_FOODS',
+  'MEAT_AND_SEAFOOD',
   'DAIRY',
-  'PANTRY',
-  'PROTEIN',
-  'SPICE',
+  'BREAKFAST_AND_CEREAL',
+  'BAKING_AND_SPICES',
+  'CANNED_GOODS_AND_SOUP',
+  'PASTA_RICE_AND_SAUCES',
+  'CONDIMENTS_AND_DRESSINGS',
+  'SNACKS',
+  'BEVERAGES',
+  'INTERNATIONAL_ETHNIC',
+  'FROZEN_FOODS',
+  'HOUSEHOLD_AND_CLEANING',
+  'PERSONAL_CARE_AND_HEALTH',
+  'PET_AND_BABY',
   'OTHER',
 ]
+
+export const INGREDIENT_CATEGORY_LABELS: Record<IngredientCategory, string> = {
+  PRODUCE: 'Produce',
+  BAKERY: 'Bakery',
+  DELI_AND_PREPARED_FOODS: 'Deli & Prepared Foods',
+  MEAT_AND_SEAFOOD: 'Meat & Seafood',
+  DAIRY: 'Dairy',
+  BREAKFAST_AND_CEREAL: 'Breakfast & Cereal',
+  BAKING_AND_SPICES: 'Baking & Spices',
+  CANNED_GOODS_AND_SOUP: 'Canned Goods & Soup',
+  PASTA_RICE_AND_SAUCES: 'Pasta, Rice & Sauces',
+  CONDIMENTS_AND_DRESSINGS: 'Condiments & Dressings',
+  SNACKS: 'Snacks',
+  BEVERAGES: 'Beverages',
+  INTERNATIONAL_ETHNIC: 'International / Ethnic',
+  FROZEN_FOODS: 'Frozen Foods',
+  HOUSEHOLD_AND_CLEANING: 'Household & Cleaning',
+  PERSONAL_CARE_AND_HEALTH: 'Personal Care & Health',
+  PET_AND_BABY: 'Pet & Baby',
+  OTHER: 'Other',
+}
 
 export type CutType =
   | 'CHOPPED'
@@ -161,6 +213,21 @@ export interface MealPlanRequest {
   startDate?: string | null
   endDate?: string | null
   items: MealPlanItemRequest[]
+}
+
+export interface ShoppingListItem {
+  ingredientId: number
+  ingredientName: string
+  category: IngredientCategory
+  totalAmount: number | null
+  unit: string | null
+  toTaste: boolean
+  sourceRecipes: RecipeSummary[]
+}
+
+export interface ShoppingList {
+  mealPlanId: number
+  items: ShoppingListItem[]
 }
 
 export interface ApiError {

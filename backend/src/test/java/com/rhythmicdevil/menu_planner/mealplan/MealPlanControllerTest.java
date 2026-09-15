@@ -133,7 +133,7 @@ class MealPlanControllerTest extends AbstractApiTest {
 
     @Test
     void shoppingListEndpoint_returnsGeneratedList() throws Exception {
-        Ingredient flour = ingredientRepository.save(new Ingredient("flour", IngredientCategory.PANTRY));
+        Ingredient flour = ingredientRepository.save(new Ingredient("flour", IngredientCategory.BAKING_AND_SPICES));
         Recipe pancakes = new Recipe("Pancakes");
         RecipeIngredient line = new RecipeIngredient(flour, new BigDecimal("1"), "cup");
         line.setStateCondition(StateCondition.RAW);

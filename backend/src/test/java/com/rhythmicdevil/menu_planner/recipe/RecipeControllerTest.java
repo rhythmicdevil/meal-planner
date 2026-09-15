@@ -84,7 +84,7 @@ class RecipeControllerTest extends AbstractApiTest {
 
     @Test
     void createWithNullAmountAndUnit_isCreated() throws Exception {
-        Ingredient salt = ingredientRepository.save(new Ingredient("salt", IngredientCategory.SPICE));
+        Ingredient salt = ingredientRepository.save(new Ingredient("salt", IngredientCategory.BAKING_AND_SPICES));
 
         RecipeRequest request = new RecipeRequest(
                 "Seasoned to Taste", null, 4,
