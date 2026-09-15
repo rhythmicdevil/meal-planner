@@ -1,0 +1,135 @@
+import { useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { Button, Group, LoadingOverlay, NumberInput, Stack, TagsInput, TextInput, Title } from '@mantine/core'
+import { useForm } from '@mantine/form'
+import { notifications } from '@mantine/notifications'
+import { ApiRequestError } from '../api/client'
+import { useCreateRecipe, useRecipe, useUpdateRecipe } from '../api/recipes'
+import type { RecipeRequest } from '../api/types'
+import { RecipeIngredientsEditor } from '../components/RecipeIngredientsEditor'
+import { RecipeStepsEditor } from '../components/RecipeStepsEditor'
+import { emptyRecipeFormValues, type RecipeFormValues } from '../types/recipeForm'
+
+export function RecipeFormPage() {
+  const { id } = useParams<{ id: string }>()
+  const isEdit = id !== undefined
+  const navigate = useNavigate()
+
+  const { data: existing, isLoading: isLoadingExisting } = useRecipe(id)
+  const createRecipe = useCreateRecipe()
+  const updateRecipe = useUpdateRecipe(id ?? '')
+
+  const form = useForm<RecipeFormValues>({
+    mode: 'controlled',
+    initialValues: emptyRecipeFormValues,
+    validate: {
+      name: (value) => (value.trim() ? null : 'Name is required'),
+      ingredients: {
+        ingredientId: (value) => (value ? null : 'Select an ingredient'),
+        amount: (value) => (value !== '' && value !== null ? null : 'Amount is required'),
+        unit: (value) => (value.trim() ? null : 'Unit is required'),
+      },
+    },
+  })
+
+  useEffect(() => {
+    if (!existing) return
+    form.setValues({
+      name: existing.name,
+      sourceUrl: existing.sourceUrl ?? '',
+      sourceName: existing.sourceName ?? '',
+      servings: existing.servings ?? '',
+      tags: existing.tags,
+      steps: [...existing.steps]
+        .sort((a, b) => a.stepNumber - b.stepNumber)
+        .map((step) => step.stepText),
+      ingredients: existing.ingredients.map((ingredient) => ({
+        ingredientId: ingredient.ingredientId,
+        amount: ingredient.amount,
+        unit: ingredient.unit,
+        cutType: ingredient.cutType,
+        cutTypeOther: ingredient.cutTypeOther ?? '',
+        stateCondition: ingredient.stateCondition,
+        stateConditionOther: ingredient.stateConditionOther ?? '',
+        notes: ingredient.notes ?? '',
+      })),
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existing])
+
+  const isSaving = createRecipe.isPending || updateRecipe.isPending
+
+  const handleSubmit = form.onSubmit(async (values) => {
+    const request: RecipeRequest = {
+      name: values.name.trim(),
+      sourceUrl: values.sourceUrl.trim() || null,
+      sourceName: values.sourceName.trim() || null,
+      servings: values.servings === '' ? null : values.servings,
+      tags: values.tags,
+      steps: values.steps.map((stepText, index) => ({ stepNumber: index + 1, stepText })),
+      ingredients: values.ingredients.map((row) => ({
+        ingredientId: row.ingredientId as number,
+        amount: row.amount === '' ? 0 : row.amount,
+        unit: row.unit,
+        cutType: row.cutType,
+        cutTypeOther: row.cutTypeOther.trim() || null,
+        stateCondition: row.stateCondition,
+        stateConditionOther: row.stateConditionOther.trim() || null,
+        notes: row.notes.trim() || null,
+      })),
+    }
+
+    try {
+      const saved = isEdit
+        ? await updateRecipe.mutateAsync(request)
+        : await createRecipe.mutateAsync(request)
+      notifications.show({ message: isEdit ? 'Recipe updated' : 'Recipe created', color: 'green' })
+      navigate(`/recipes/${saved.id}`)
+    } catch (err) {
+      if (err instanceof ApiRequestError) {
+        if (err.fieldErrors) {
+          form.setErrors(err.fieldErrors)
+        }
+        notifications.show({ message: err.message, color: 'red' })
+      } else {
+        notifications.show({ message: 'Something went wrong', color: 'red' })
+      }
+    }
+  })
+
+  if (isEdit && isLoadingExisting) {
+    return <LoadingOverlay visible />
+  }
+
+  return (
+    <Stack maw={700} mx="auto" py="lg" px="md">
+      <Title order={2}>{isEdit ? 'Edit recipe' : 'New recipe'}</Title>
+      <form onSubmit={handleSubmit}>
+        <Stack>
+          <TextInput label="Name" required {...form.getInputProps('name')} />
+          <Group grow>
+            <TextInput label="Source name" {...form.getInputProps('sourceName')} />
+            <TextInput label="Source URL" {...form.getInputProps('sourceUrl')} />
+          </Group>
+          <NumberInput label="Servings" min={1} {...form.getInputProps('servings')} />
+          <TagsInput label="Tags" placeholder="Add a tag and press Enter" {...form.getInputProps('tags')} />
+
+          <Title order={4}>Steps</Title>
+          <RecipeStepsEditor form={form} />
+
+          <Title order={4}>Ingredients</Title>
+          <RecipeIngredientsEditor form={form} />
+
+          <Group justify="flex-end">
+            <Button variant="default" type="button" onClick={() => navigate(-1)}>
+              Cancel
+            </Button>
+            <Button type="submit" loading={isSaving}>
+              {isEdit ? 'Save changes' : 'Create recipe'}
+            </Button>
+          </Group>
+        </Stack>
+      </form>
+    </Stack>
+  )
+}
