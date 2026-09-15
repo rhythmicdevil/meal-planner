@@ -14,7 +14,6 @@ export interface RecipeIngredientRow {
 export interface RecipeFormValues {
   name: string
   sourceUrl: string
-  sourceName: string
   servings: number | ''
   tags: string[]
   steps: string[]
@@ -35,7 +34,6 @@ export const emptyIngredientRow = (): RecipeIngredientRow => ({
 export const emptyRecipeFormValues: RecipeFormValues = {
   name: '',
   sourceUrl: '',
-  sourceName: '',
   servings: '',
   tags: [],
   steps: [],

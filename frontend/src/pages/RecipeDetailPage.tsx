@@ -35,16 +35,12 @@ export function RecipeDetailPage() {
       <Group justify="space-between" align="flex-start">
         <div>
           <Title order={2}>{recipe.name}</Title>
-          {recipe.sourceName && (
+          {recipe.sourceUrl && (
             <Text c="dimmed">
-              from{' '}
-              {recipe.sourceUrl ? (
-                <Anchor href={recipe.sourceUrl} target="_blank" rel="noreferrer">
-                  {recipe.sourceName}
-                </Anchor>
-              ) : (
-                recipe.sourceName
-              )}
+              Source:{' '}
+              <Anchor href={recipe.sourceUrl} target="_blank" rel="noreferrer">
+                {recipe.sourceUrl}
+              </Anchor>
             </Text>
           )}
         </div>
@@ -71,7 +67,8 @@ export function RecipeDetailPage() {
       <List>
         {recipe.ingredients.map((ingredient) => (
           <List.Item key={ingredient.id}>
-            {ingredient.amount} {ingredient.unit} {ingredient.ingredientName}
+            {[ingredient.amount, ingredient.unit].filter((part) => part !== null && part !== '').join(' ')}{' '}
+            {ingredient.ingredientName}
             {ingredient.cutType && (
               <Text span c="dimmed">
                 {' '}

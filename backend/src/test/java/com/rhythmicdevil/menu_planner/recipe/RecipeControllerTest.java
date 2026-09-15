@@ -17,6 +17,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -45,7 +46,7 @@ class RecipeControllerTest extends AbstractApiTest {
         Ingredient onion = ingredientRepository.save(new Ingredient("yellow onion", IngredientCategory.PRODUCE));
 
         RecipeRequest createRequest = new RecipeRequest(
-                "Weeknight Tacos", null, null, 4,
+                "Weeknight Tacos", null, 4,
                 List.of(new RecipeStepDto(1, "Dice the onion")),
                 List.of(new RecipeIngredientRequest(
                         onion.getId(), new BigDecimal("1.5"), "cup", CutType.DICED, null, StateCondition.RAW, null, null)),
@@ -69,7 +70,7 @@ class RecipeControllerTest extends AbstractApiTest {
                 .andExpect(jsonPath("$.ingredients[0].ingredientName").value("yellow onion"));
 
         RecipeRequest updateRequest = new RecipeRequest(
-                "Weeknight Tacos v2", null, null, 4,
+                "Weeknight Tacos v2", null, 4,
                 List.of(new RecipeStepDto(1, "Dice the onion")),
                 List.of(new RecipeIngredientRequest(
                         onion.getId(), new BigDecimal("2"), "cup", CutType.DICED, null, StateCondition.RAW, null, null)),
@@ -84,9 +85,29 @@ class RecipeControllerTest extends AbstractApiTest {
     }
 
     @Test
+    void createWithNullAmountAndUnit_isCreated() throws Exception {
+        Ingredient salt = ingredientRepository.save(new Ingredient("salt", IngredientCategory.SPICE));
+
+        RecipeRequest request = new RecipeRequest(
+                "Seasoned to Taste", null, 4,
+                List.of(),
+                List.of(new RecipeIngredientRequest(
+                        salt.getId(), null, null, null, null, null, null, "to taste")),
+                Set.of());
+
+        mockMvc.perform(authenticated(post("/api/recipes"))
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.ingredients[0].amount").value(nullValue()))
+                .andExpect(jsonPath("$.ingredients[0].unit").value(nullValue()))
+                .andExpect(jsonPath("$.ingredients[0].notes").value("to taste"));
+    }
+
+    @Test
     void createWithUnknownIngredient_isNotFound() throws Exception {
         RecipeRequest request = new RecipeRequest(
-                "Ghost Recipe", null, null, 2,
+                "Ghost Recipe", null, 2,
                 List.of(),
                 List.of(new RecipeIngredientRequest(999999L, BigDecimal.ONE, "cup", null, null, null, null, null)),
                 Set.of());

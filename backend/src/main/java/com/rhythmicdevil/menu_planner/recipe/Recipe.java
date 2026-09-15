@@ -32,9 +32,6 @@ public class Recipe {
     @Column(name = "source_url")
     private String sourceUrl;
 
-    @Column(name = "source_name")
-    private String sourceName;
-
     @Column(name = "servings")
     private Integer servings;
 
@@ -79,14 +76,6 @@ public class Recipe {
 
     public void setSourceUrl(String sourceUrl) {
         this.sourceUrl = sourceUrl;
-    }
-
-    public String getSourceName() {
-        return sourceName;
-    }
-
-    public void setSourceName(String sourceName) {
-        this.sourceName = sourceName;
     }
 
     public Integer getServings() {

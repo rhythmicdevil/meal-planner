@@ -77,8 +77,8 @@ export interface RecipeIngredient {
   id: number
   ingredientId: number
   ingredientName: string
-  amount: number
-  unit: string
+  amount: number | null
+  unit: string | null
   cutType: CutType | null
   cutTypeOther: string | null
   stateCondition: StateCondition | null
@@ -88,8 +88,8 @@ export interface RecipeIngredient {
 
 export interface RecipeIngredientRequest {
   ingredientId: number
-  amount: number
-  unit: string
+  amount?: number | null
+  unit?: string | null
   cutType?: CutType | null
   cutTypeOther?: string | null
   stateCondition?: StateCondition | null
@@ -101,7 +101,6 @@ export interface Recipe {
   id: number
   name: string
   sourceUrl: string | null
-  sourceName: string | null
   servings: number | null
   steps: RecipeStep[]
   ingredients: RecipeIngredient[]
@@ -112,7 +111,6 @@ export interface Recipe {
 export interface RecipeRequest {
   name: string
   sourceUrl?: string | null
-  sourceName?: string | null
   servings?: number | null
   steps: RecipeStep[]
   ingredients: RecipeIngredientRequest[]

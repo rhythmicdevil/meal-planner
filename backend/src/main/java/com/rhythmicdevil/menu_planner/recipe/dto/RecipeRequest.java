@@ -10,7 +10,6 @@ import java.util.Set;
 public record RecipeRequest(
         @NotBlank String name,
         String sourceUrl,
-        String sourceName,
         @Positive Integer servings,
         List<@Valid RecipeStepDto> steps,
         List<@Valid RecipeIngredientRequest> ingredients,

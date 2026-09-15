@@ -20,8 +20,8 @@ This is a design/planning doc meant to be handed to Claude Code as the starting 
 - `id`
 - `recipeId`
 - `ingredientId`
-- `amount` (numeric quantity)
-- `unit` (cup, tbsp, g, oz, each, etc.)
+- `amount` (numeric quantity, optional — null for a "to taste" ingredient with no fixed quantity)
+- `unit` (cup, tbsp, g, oz, each, etc., optional for the same reason)
 - `cutType` (chopped, diced, minced, julienned, sliced, shredded, grated, whole, etc.) — the physical cut/prep applied to the ingredient
 - `stateCondition` (raw, cooked, frozen, thawed, softened, melted, room temp, etc.) — the state/condition of the ingredient
 - `notes` (optional, e.g. "divided", "or to taste")
@@ -33,7 +33,7 @@ This is a design/planning doc meant to be handed to Claude Code as the starting 
 **Recipe**
 - `id`
 - `name`
-- `sourceUrl` / `sourceName` (for imported recipes)
+- `sourceUrl` (for imported recipes)
 - `servings`
 - `instructions[]` (ordered `RecipeStep`: `stepNumber`, `text`)
 - `ingredients[]` (RecipeIngredient, above)
@@ -95,6 +95,7 @@ Straightforward CRUD: select recipes from the catalog to build a Menu. A MealPla
    Start simple (rule A: separate lines when units are incompatible in kind), and add ingredient-specific conversion data later if it's worth the effort.
 5. Round the final summed amount up to the nearest purchasable/whole unit before display (e.g. 1.5 onions needed → shows "2 onions"; this favors slight overbuying over asking the user to buy a fractional item, which matches how grocery shopping actually works).
 6. Emit one `ShoppingListItem` per ingredient (or per ingredient+unit-kind if not fully unified).
+7. `RecipeIngredient.amount`/`unit` can be null ("to taste" items, e.g. salt/pepper). These can't be summed with a quantity — emit them as a flagged line with no amount (e.g. "salt — to taste") rather than folding them into the rounding/unification logic above.
 
 ### 3.3 Generate a Prep List
 1. Collect `RecipeIngredient` rows across every recipe in the MealPlan, but only those that actually need prep work done to them (i.e. have a non-trivial `cutType`) — for now, scope this to **vegetables** specifically (an ingredient's `category` = produce/vegetable), since that's the current focus; other categories (proteins, pantry items, etc.) can be brought into Prep List scope later without changing the underlying model.

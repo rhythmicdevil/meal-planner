@@ -30,10 +30,10 @@ public class RecipeIngredient {
     @JoinColumn(name = "ingredient_id", nullable = false)
     private Ingredient ingredient;
 
-    @Column(name = "amount", nullable = false)
+    @Column(name = "amount")
     private BigDecimal amount;
 
-    @Column(name = "unit", nullable = false)
+    @Column(name = "unit")
     private String unit;
 
     @Enumerated(EnumType.STRING)

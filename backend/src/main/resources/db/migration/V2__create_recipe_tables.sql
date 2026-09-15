@@ -2,7 +2,6 @@ CREATE TABLE recipe (
     id          BIGINT AUTO_INCREMENT PRIMARY KEY,
     name        VARCHAR(255) NOT NULL,
     source_url  VARCHAR(1024) NULL,
-    source_name VARCHAR(255) NULL,
     servings    INT NULL,
     version     INT NOT NULL DEFAULT 1
 );
@@ -26,8 +25,8 @@ CREATE TABLE recipe_ingredient (
     id                     BIGINT AUTO_INCREMENT PRIMARY KEY,
     recipe_id              BIGINT        NOT NULL,
     ingredient_id          BIGINT        NOT NULL,
-    amount                 DECIMAL(10,3) NOT NULL,
-    unit                   VARCHAR(50)   NOT NULL,
+    amount                 DECIMAL(10,3) NULL,
+    unit                   VARCHAR(50)   NULL,
     cut_type               VARCHAR(20)   NULL,
     cut_type_other         VARCHAR(100)  NULL,
     state_condition        VARCHAR(20)   NULL,

@@ -61,7 +61,6 @@ public class RecipeService {
 
     private void applyRequest(Recipe recipe, RecipeRequest request) {
         recipe.setSourceUrl(request.sourceUrl());
-        recipe.setSourceName(request.sourceName());
         recipe.setServings(request.servings());
         recipe.setTags(request.tags() != null ? new HashSet<>(request.tags()) : new HashSet<>());
 
