@@ -2,8 +2,7 @@ CREATE TABLE recipe (
     id          BIGINT AUTO_INCREMENT PRIMARY KEY,
     name        VARCHAR(255) NOT NULL,
     source_url  VARCHAR(1024) NULL,
-    servings    INT NULL,
-    version     INT NOT NULL DEFAULT 1
+    servings    INT NULL
 );
 
 CREATE TABLE recipe_step (

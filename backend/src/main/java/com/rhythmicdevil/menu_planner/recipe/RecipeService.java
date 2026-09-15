@@ -48,7 +48,6 @@ public class RecipeService {
         Recipe recipe = getOrThrow(id);
         recipe.setName(request.name());
         applyRequest(recipe, request);
-        recipe.incrementVersion();
         return RecipeResponse.from(recipe);
     }
 

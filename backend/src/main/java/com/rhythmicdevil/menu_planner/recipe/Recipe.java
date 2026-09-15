@@ -48,9 +48,6 @@ public class Recipe {
     @Column(name = "tag")
     private Set<String> tags = new HashSet<>();
 
-    @Column(name = "version", nullable = false)
-    private int version = 1;
-
     protected Recipe() {
     }
 
@@ -112,13 +109,5 @@ public class Recipe {
 
     public void setTags(Set<String> tags) {
         this.tags = tags;
-    }
-
-    public int getVersion() {
-        return version;
-    }
-
-    public void incrementVersion() {
-        this.version++;
     }
 }

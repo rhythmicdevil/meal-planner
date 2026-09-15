@@ -42,7 +42,7 @@ class RecipeControllerTest extends AbstractApiTest {
     }
 
     @Test
-    void createThenUpdate_incrementsVersion() throws Exception {
+    void createThenUpdate() throws Exception {
         Ingredient onion = ingredientRepository.save(new Ingredient("yellow onion", IngredientCategory.PRODUCE));
 
         RecipeRequest createRequest = new RecipeRequest(
@@ -56,7 +56,6 @@ class RecipeControllerTest extends AbstractApiTest {
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(createRequest)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.version").value(1))
                 .andReturn().getResponse().getContentAsString();
 
         JsonNode created = objectMapper.readTree(createResponse);
@@ -80,7 +79,6 @@ class RecipeControllerTest extends AbstractApiTest {
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(updateRequest)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.version").value(2))
                 .andExpect(jsonPath("$.name").value("Weeknight Tacos v2"));
     }
 

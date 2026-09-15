@@ -38,9 +38,6 @@ This is a design/planning doc meant to be handed to Claude Code as the starting 
 - `instructions[]` (ordered `RecipeStep`: `stepNumber`, `text`)
 - `ingredients[]` (RecipeIngredient, above)
 - `tags[]` (cuisine, meal type, etc. — optional but cheap to add now)
-- `version` (incrementing integer) — see versioning note below
-
-> Note on versioning: editing a Recipe creates a new version rather than mutating history in place (e.g. an append-only `RecipeVersion` table, or a simpler `version` counter with the "current" row always being the latest). `MealPlanItem` (below) stores a reference to the **specific Recipe version** that was active when it was added, so a MealPlan's Shopping List/Prep List stay accurate to what was actually planned even if the base Recipe gets edited later. The Recipe catalog UI always shows/edits the latest version by default.
 
 **Menu**
 - `id`, `name`
@@ -49,7 +46,7 @@ This is a design/planning doc meant to be handed to Claude Code as the starting 
 **MealPlan**
 - `id`, `name`, `dateRange` (optional, e.g. week of 9/14)
 - `items[]` — each item is **either** a direct Recipe reference **or** a Menu reference (1..N total). This covers the one-pot-meal case: a single Recipe can be added on its own without needing to wrap it in a Menu first, while a Menu (e.g. "Taco Night" = tacos + rice + salsa) can still be added as one unit when you want a themed set of dishes to travel together.
-  - Modeling note: implement this as a `MealPlanItem` join entity with a discriminator (`itemType`: RECIPE or MENU) and the corresponding `recipeId`+`recipeVersion` or `menuId` set — not two separate nullable FK columns crammed onto MealPlan itself. Pinning to `recipeVersion` is what makes recipe versioning (see Recipe entity above) actually take effect.
+  - Modeling note: implement this as a `MealPlanItem` join entity with a discriminator (`itemType`: RECIPE or MENU) and the corresponding `recipeId` or `menuId` set — not two separate nullable FK columns crammed onto MealPlan itself. The Recipe reference is live (no version pinning — see Open Decision #4), so a MealPlan always reflects the current state of its recipes.
   - Wherever downstream logic (Shopping List, Prep List) needs "all recipes in this Meal Plan," resolve `items[]` by expanding any Menu items into their constituent recipes first, then treat the result as one flat recipe list.
 
 **ShoppingList** (generated from a MealPlan)
@@ -200,7 +197,7 @@ Since real-world recipes you'll be pulling from tend to come from sites like Blu
 1. ~~**Cut type / state condition vocabularies**~~ — **Decided:** closed enum for both `cutType` and `stateCondition`, each with an "other" freeform escape hatch.
 2. ~~**Shopping list merge across incompatible units**~~ — **Decided:** round up to the nearest purchasable whole unit rather than chasing precision; slight overbuying (e.g. buying 2 onions when a recipe needs 1.5) is fine.
 3. ~~**Prep List merge granularity**~~ — **Decided:** group similar cut types together (e.g. "diced" and "chopped" combine), rather than requiring an exact match.
-4. ~~**Recipe versioning**~~ — **Decided:** yes, version recipes; MealPlanItem pins to the specific Recipe version active when it was added (see §2 Recipe entity note).
+4. ~~**Recipe versioning**~~ — **Decided:** no. Originally planned (a `version` counter + `MealPlanItem` pinning to the version active at add-time), but walked back — recipes won't be edited often enough for stale-plan drift to matter in practice. A `MealPlanItem` now just references the live Recipe; editing a Recipe immediately updates anywhere it's referenced from a MealPlan/Menu.
 5. ~~**Auth**~~ — **Decided:** basic auth for now.
 6. ~~**Import source**~~ — **Decided:** Phase 4 imports by URL (`UrlImportAdapter` fetches the page server-side, downloading HTML to a temp directory before parsing) rather than requiring a manually downloaded file; browser-extension POST of pre-extracted data remains a Phase 5 fallback for pages the server can't fetch directly.
 7. **Sample recipe URLs / test fixtures**: needed to finalize the Phase 4 parser design against real JSON-LD variety. You'll supply a handful of real recipe URLs (e.g. from Blue Apron, AllRecipes, Budget Bytes) once implementation gets underway, and the fetched HTML can be saved into a test fixtures directory for repeatable parsing tests — **note for Claude Code: hold off finalizing the Phase 4 parser/adapter details until those sample URLs are provided and reviewed.**

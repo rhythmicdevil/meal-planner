@@ -33,9 +33,6 @@ public class MealPlanItem {
     @JoinColumn(name = "recipe_id")
     private Recipe recipe;
 
-    @Column(name = "recipe_version")
-    private Integer recipeVersion;
-
     @ManyToOne
     @JoinColumn(name = "menu_id")
     private Menu menu;
@@ -48,10 +45,9 @@ public class MealPlanItem {
         this.itemType = itemType;
     }
 
-    public static MealPlanItem forRecipe(MealPlan mealPlan, Recipe recipe, int recipeVersion) {
+    public static MealPlanItem forRecipe(MealPlan mealPlan, Recipe recipe) {
         MealPlanItem item = new MealPlanItem(mealPlan, MealPlanItemType.RECIPE);
         item.recipe = recipe;
-        item.recipeVersion = recipeVersion;
         return item;
     }
 
@@ -75,10 +71,6 @@ public class MealPlanItem {
 
     public Recipe getRecipe() {
         return recipe;
-    }
-
-    public Integer getRecipeVersion() {
-        return recipeVersion;
     }
 
     public Menu getMenu() {

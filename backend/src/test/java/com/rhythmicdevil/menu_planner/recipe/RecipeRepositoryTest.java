@@ -45,7 +45,6 @@ class RecipeRepositoryTest extends AbstractIntegrationTest {
 
         Recipe reloaded = recipeRepository.findById(id).orElseThrow();
         assertThat(reloaded.getName()).isEqualTo("Weeknight Tacos");
-        assertThat(reloaded.getVersion()).isEqualTo(1);
         assertThat(reloaded.getTags()).containsExactlyInAnyOrder("weeknight", "mexican");
         assertThat(reloaded.getSteps()).extracting(RecipeStep::getStepText)
                 .containsExactly("Dice the onion", "Brown the meat");

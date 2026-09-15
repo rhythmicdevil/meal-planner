@@ -13,8 +13,7 @@ public record RecipeResponse(
         Integer servings,
         List<RecipeStepDto> steps,
         List<RecipeIngredientResponse> ingredients,
-        Set<String> tags,
-        int version
+        Set<String> tags
 ) {
     public static RecipeResponse from(Recipe recipe) {
         return new RecipeResponse(
@@ -24,8 +23,7 @@ public record RecipeResponse(
                 recipe.getServings(),
                 recipe.getSteps().stream().map(RecipeStepDto::from).toList(),
                 recipe.getIngredients().stream().map(RecipeIngredientResponse::from).toList(),
-                new HashSet<>(recipe.getTags()),
-                recipe.getVersion()
+                new HashSet<>(recipe.getTags())
         );
     }
 }
