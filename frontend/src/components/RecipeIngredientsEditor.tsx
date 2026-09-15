@@ -1,7 +1,12 @@
+import { useState } from 'react'
 import { Button, Group, NumberInput, Paper, Select, Stack, TextInput } from '@mantine/core'
 import type { UseFormReturnType } from '@mantine/form'
+import { notifications } from '@mantine/notifications'
+import { useCreateIngredient, useIngredients } from '../api/ingredients'
 import { CUT_TYPES, STATE_CONDITIONS } from '../api/types'
-import { emptyIngredientRow, type RecipeFormValues } from '../types/recipeForm'
+import { emptyIngredientRow, type RecipeFormValues, type RecipeIngredientRow } from '../types/recipeForm'
+import { parseIngredientLine } from '../utils/parseIngredientLine'
+import { BulkPasteModal } from './BulkPasteModal'
 import { IngredientPicker } from './IngredientPicker'
 
 interface Props {
@@ -10,6 +15,67 @@ interface Props {
 
 export function RecipeIngredientsEditor({ form }: Props) {
   const rows = form.values.ingredients
+  const { data: ingredients = [] } = useIngredients()
+  const createIngredient = useCreateIngredient()
+  const [pasteOpen, setPasteOpen] = useState(false)
+
+  // Bulk-pasted lines almost never match an existing catalog entry on a fresh install —
+  // leaving them unlinked would fail every row's "select an ingredient" validation, which
+  // defeats the point of a *bulk* add. So unmatched-but-named lines get their ingredient
+  // auto-created (category defaults to Other; the notification below flags this for review).
+  const handleBulkAdd = async (text: string) => {
+    const lines = text
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0)
+
+    const createdIdByName = new Map<string, number>()
+    const newRows: RecipeIngredientRow[] = []
+    let unresolvedCount = 0
+
+    for (const line of lines) {
+      for (const parsed of parseIngredientLine(line, ingredients)) {
+        let ingredientId = parsed.matchedIngredientId
+
+        if (ingredientId === null && parsed.name) {
+          const key = parsed.name.toLowerCase()
+          const alreadyCreated = createdIdByName.get(key)
+          if (alreadyCreated !== undefined) {
+            ingredientId = alreadyCreated
+          } else {
+            const created = await createIngredient.mutateAsync({ name: parsed.name, category: 'OTHER' })
+            ingredientId = created.id
+            createdIdByName.set(key, created.id)
+          }
+        }
+
+        if (ingredientId === null) unresolvedCount += 1
+
+        newRows.push({
+          ingredientId,
+          amount: parsed.amount ?? '',
+          unit: parsed.unit,
+          cutType: parsed.cutType,
+          cutTypeOther: '',
+          stateCondition: null,
+          stateConditionOther: '',
+          notes: parsed.notes,
+        })
+      }
+    }
+
+    form.setFieldValue('ingredients', [...form.values.ingredients, ...newRows])
+
+    const createdCount = createdIdByName.size
+    const parts = [`Added ${newRows.length} ingredient${newRows.length === 1 ? '' : 's'}.`]
+    if (createdCount > 0) {
+      parts.push(`Created ${createdCount} new catalog ingredient${createdCount === 1 ? '' : 's'} (category: Other) — review and re-categorize when you get a chance.`)
+    }
+    if (unresolvedCount > 0) {
+      parts.push(`${unresolvedCount} line${unresolvedCount === 1 ? '' : 's'} couldn't be parsed — check the notes on the new row${unresolvedCount === 1 ? '' : 's'}.`)
+    }
+    notifications.show({ message: parts.join(' '), color: unresolvedCount > 0 ? 'yellow' : 'green' })
+  }
 
   return (
     <Stack>
@@ -24,13 +90,14 @@ export function RecipeIngredientsEditor({ form }: Props) {
             <Group grow>
               <NumberInput
                 label="Amount"
+                placeholder="leave blank for 'to taste'"
                 min={0}
                 decimalScale={3}
                 {...form.getInputProps(`ingredients.${index}.amount`)}
               />
               <TextInput
                 label="Unit"
-                placeholder="cup, g, each…"
+                placeholder="cup, g, each… (optional)"
                 {...form.getInputProps(`ingredients.${index}.unit`)}
               />
             </Group>
@@ -80,13 +147,27 @@ export function RecipeIngredientsEditor({ form }: Props) {
           </Stack>
         </Paper>
       ))}
-      <Button
-        variant="light"
-        type="button"
-        onClick={() => form.insertListItem('ingredients', emptyIngredientRow())}
-      >
-        + Add ingredient
-      </Button>
+      <Group>
+        <Button
+          variant="light"
+          type="button"
+          onClick={() => form.insertListItem('ingredients', emptyIngredientRow())}
+        >
+          + Add ingredient
+        </Button>
+        <Button variant="default" type="button" onClick={() => setPasteOpen(true)}>
+          Paste ingredients
+        </Button>
+      </Group>
+
+      <BulkPasteModal
+        opened={pasteOpen}
+        onClose={() => setPasteOpen(false)}
+        title="Paste ingredients"
+        description="One ingredient per line, e.g. '4 cups cherry tomatoes' or '1 tsp salt'. Ingredients not already in your catalog get created automatically (category: Other)."
+        placeholder={'4 cups cherry tomatoes\n1 tablespoon olive oil\n1 teaspoon kosher salt\n…'}
+        onSubmit={handleBulkAdd}
+      />
     </Stack>
   )
 }
