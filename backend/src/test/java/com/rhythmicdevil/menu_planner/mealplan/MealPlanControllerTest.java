@@ -1,11 +1,16 @@
 package com.rhythmicdevil.menu_planner.mealplan;
 
+import com.rhythmicdevil.menu_planner.ingredient.Ingredient;
+import com.rhythmicdevil.menu_planner.ingredient.IngredientCategory;
+import com.rhythmicdevil.menu_planner.ingredient.IngredientRepository;
 import com.rhythmicdevil.menu_planner.mealplan.dto.MealPlanItemRequest;
 import com.rhythmicdevil.menu_planner.mealplan.dto.MealPlanRequest;
 import com.rhythmicdevil.menu_planner.menu.Menu;
 import com.rhythmicdevil.menu_planner.menu.MenuRepository;
 import com.rhythmicdevil.menu_planner.recipe.Recipe;
+import com.rhythmicdevil.menu_planner.recipe.RecipeIngredient;
 import com.rhythmicdevil.menu_planner.recipe.RecipeRepository;
+import com.rhythmicdevil.menu_planner.recipe.StateCondition;
 import com.rhythmicdevil.menu_planner.recipe.dto.RecipeRequest;
 import com.rhythmicdevil.menu_planner.support.AbstractApiTest;
 import org.junit.jupiter.api.AfterEach;
@@ -13,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import tools.jackson.databind.ObjectMapper;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 
@@ -36,11 +42,15 @@ class MealPlanControllerTest extends AbstractApiTest {
     @Autowired
     private MealPlanRepository mealPlanRepository;
 
+    @Autowired
+    private IngredientRepository ingredientRepository;
+
     @AfterEach
     void cleanUp() {
         mealPlanRepository.deleteAll();
         menuRepository.deleteAll();
         recipeRepository.deleteAll();
+        ingredientRepository.deleteAll();
     }
 
     @Test
@@ -118,6 +128,41 @@ class MealPlanControllerTest extends AbstractApiTest {
         mockMvc.perform(authenticated(post("/api/meal-plans"))
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shoppingListEndpoint_returnsGeneratedList() throws Exception {
+        Ingredient flour = ingredientRepository.save(new Ingredient("flour", IngredientCategory.PANTRY));
+        Recipe pancakes = new Recipe("Pancakes");
+        RecipeIngredient line = new RecipeIngredient(flour, new BigDecimal("1"), "cup");
+        line.setStateCondition(StateCondition.RAW);
+        pancakes.replaceIngredients(List.of(line));
+        pancakes = recipeRepository.save(pancakes);
+
+        MealPlanRequest request = new MealPlanRequest(
+                "This Week", null, null,
+                List.of(new MealPlanItemRequest(MealPlanItemType.RECIPE, pancakes.getId(), null)));
+
+        String createResponse = mockMvc.perform(authenticated(post("/api/meal-plans"))
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        Long mealPlanId = objectMapper.readTree(createResponse).get("id").asLong();
+
+        mockMvc.perform(authenticated(get("/api/meal-plans/" + mealPlanId + "/shopping-list")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mealPlanId").value(mealPlanId))
+                .andExpect(jsonPath("$.items[0].ingredientName").value("flour"))
+                .andExpect(jsonPath("$.items[0].totalAmount").value(1))
+                .andExpect(jsonPath("$.items[0].unit").value("cup"))
+                .andExpect(jsonPath("$.items[0].toTaste").value(false));
+    }
+
+    @Test
+    void shoppingListForUnknownMealPlan_isNotFound() throws Exception {
+        mockMvc.perform(authenticated(get("/api/meal-plans/999999/shopping-list")))
                 .andExpect(status().isNotFound());
     }
 }
