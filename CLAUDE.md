@@ -106,8 +106,8 @@ Straightforward CRUD: select recipes from the catalog to build a Menu. A MealPla
 ## 4. Import Module
 
 ### Goals
-- Import recipes from downloaded files today (you'll supply a sample format).
-- Architect it so a browser extension could later POST scraped recipe data from a website directly to the same backend pipeline.
+- Import recipes by URL: given a recipe page URL, fetch the page server-side and extract the embedded recipe data. This is the Phase 4 entry point — no manual file download/upload step required.
+- Architect it so a browser extension could later POST pre-extracted recipe data (JSON-LD/microdata already pulled from the page) directly to the same backend pipeline, skipping the server-side fetch — useful for JS-rendered or login-gated pages the URL adapter can't reach on its own.
 - Handle fuzzy matching (imported ingredient text → canonical Ingredient catalog entries) and unit/format normalization.
 
 ### Suggested architecture
@@ -119,8 +119,8 @@ Treat import as a **pipeline with pluggable front-end parsers feeding a common i
 
 - **RawRecipeDTO**: a loose intermediate schema (title, servings, raw ingredient lines as strings, raw instruction lines as strings, source metadata). This is the contract every parser produces, regardless of source.
 - **Parser/Adapter interface**: `RecipeImportAdapter` with one method roughly like `RawRecipeDTO parse(InputSource source)`. Implementations:
-  - `FileImportAdapter` (your downloaded file format — likely JSON or a known recipe export format like [schema.org/Recipe](https://schema.org/Recipe) JSON-LD, which many recipe sites and export tools use)
-  - Later: `WebScrapeImportAdapter` — same interface, fed by a browser extension that extracts the page's JSON-LD/microdata and POSTs it to a new REST endpoint (e.g. `POST /api/import/raw`), which runs it through the same normalization pipeline. This is the payoff of designing to the interface now.
+  - `UrlImportAdapter` (Phase 4, primary path) — given a recipe URL, fetch the page over HTTP, then extract the embedded [schema.org/Recipe](https://schema.org/Recipe) JSON-LD (or microdata fallback) from the HTML. Implementation note: write the fetched HTML to a temp directory before parsing rather than parsing the HTTP response in-memory directly — makes failed extractions easy to debug (you can inspect exactly what was fetched) and doubles as a natural source for test fixtures (see Open Decision #6).
+  - Later: `WebScrapeImportAdapter` — same interface, fed by a browser extension that extracts the page's JSON-LD/microdata client-side and POSTs it to a new REST endpoint (e.g. `POST /api/import/raw`), which runs it through the same normalization pipeline. This is the payoff of designing to the interface now, and it's the fallback for pages the server-side fetch can't handle.
   - This is a good fit for a **Strategy pattern** in Spring: register each adapter as a bean, pick the right one based on import request type/content-type.
 - **Normalization/Matching stage**: takes the raw ingredient line strings (e.g. `"2 cups yellow onion, diced"`) and:
   1. Parses out amount, unit, ingredient name, cut type, and state condition — this is the hardest NLP-ish part. A rule-based parser (regex + a units dictionary + cut-type/state-condition keyword lists) will get you 80-90% of the way for typical recipe text; consider a library rather than hand-rolling from scratch (see §5).
@@ -129,7 +129,7 @@ Treat import as a **pipeline with pluggable front-end parsers feeding a common i
 - **Review/Confirm step**: since fuzzy matching will never be 100%, plan on an import review UI where the user sees the parsed recipe and can correct ingredient matches, amounts, units, and prep styles before final save. Don't try to make import fully automatic on day one.
 
 ### Note on recipe sources
-Since real-world recipes you'll be pulling from tend to come from sites like Blue Apron's cookbook, AllRecipes, and Budget Bytes, it's worth grabbing a sample from each of those (in whatever downloadable form you have) so the parser is tested against real variety in ingredient-line phrasing, not just one clean format.
+Since real-world recipes you'll be pulling from tend to come from sites like Blue Apron's cookbook, AllRecipes, and Budget Bytes, it's worth gathering a handful of real URLs from each of those (and saving the fetched HTML into test fixtures — see Open Decision #6) so the parser is tested against real variety in ingredient-line phrasing and JSON-LD structure, not just one clean format.
 
 ---
 
@@ -182,9 +182,9 @@ Since real-world recipes you'll be pulling from tend to come from sites like Blu
 - Implement the merge/grouping logic from §3.2 and §3.3
 - Endpoints + UI to view/generate these from a MealPlan
 
-**Phase 4 — Import module (file-based)**
+**Phase 4 — Import module (URL-based)**
 - Define `RawRecipeDTO` and `RecipeImportAdapter` interface
-- Implement `FileImportAdapter` against your sample file format
+- Implement `UrlImportAdapter`: given a recipe URL, fetch the page (downloading the HTML to a temp directory), extract schema.org/JSON-LD recipe markup, and produce a `RawRecipeDTO`
 - Implement ingredient parsing (amount/unit/prep-style extraction) + fuzzy matching against the Ingredient catalog
 - Build the review/confirm UI for imports
 
@@ -201,4 +201,5 @@ Since real-world recipes you'll be pulling from tend to come from sites like Blu
 3. ~~**Prep List merge granularity**~~ — **Decided:** group similar cut types together (e.g. "diced" and "chopped" combine), rather than requiring an exact match.
 4. ~~**Recipe versioning**~~ — **Decided:** yes, version recipes; MealPlanItem pins to the specific Recipe version active when it was added (see §2 Recipe entity note).
 5. ~~**Auth**~~ — **Decided:** basic auth for now.
-6. **Sample import file format**: needed to finalize the Phase 4 parser design. You'll add sample files to a directory in the project once implementation gets underway — **note for Claude Code: hold off finalizing the Phase 4 parser/adapter details until that sample directory is provided and reviewed.**
+6. ~~**Import source**~~ — **Decided:** Phase 4 imports by URL (`UrlImportAdapter` fetches the page server-side, downloading HTML to a temp directory before parsing) rather than requiring a manually downloaded file; browser-extension POST of pre-extracted data remains a Phase 5 fallback for pages the server can't fetch directly.
+7. **Sample recipe URLs / test fixtures**: needed to finalize the Phase 4 parser design against real JSON-LD variety. You'll supply a handful of real recipe URLs (e.g. from Blue Apron, AllRecipes, Budget Bytes) once implementation gets underway, and the fetched HTML can be saved into a test fixtures directory for repeatable parsing tests — **note for Claude Code: hold off finalizing the Phase 4 parser/adapter details until those sample URLs are provided and reviewed.**
