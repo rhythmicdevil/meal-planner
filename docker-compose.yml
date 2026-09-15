@@ -1,0 +1,16 @@
+services:
+  db:
+    image: mysql:8
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-meal_planner}
+      MYSQL_USER: ${DB_USERNAME:-meal_planner}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-meal_planner}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-changeme}
+    ports:
+      - "3306:3306"
+    volumes:
+      - meal_planner_db_data:/var/lib/mysql
+
+volumes:
+  meal_planner_db_data:
