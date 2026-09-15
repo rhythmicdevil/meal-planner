@@ -71,4 +71,9 @@ public class MealPlan {
     public List<MealPlanItem> getItems() {
         return items;
     }
+
+    public void replaceItems(List<MealPlanItem> newItems) {
+        items.clear();
+        items.addAll(newItems);
+    }
 }
