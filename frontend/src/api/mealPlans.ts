@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiFetch } from './client'
-import type { MealPlan, MealPlanRequest } from './types'
+import type { MealPlan, MealPlanRequest, ShoppingList } from './types'
 
 const MEAL_PLANS_KEY = ['mealPlans']
 const mealPlanKey = (id: number | string) => ['mealPlans', String(id)]
+const shoppingListKey = (id: number | string) => ['mealPlans', String(id), 'shoppingList']
 
 export function useMealPlans() {
   return useQuery({
@@ -16,6 +17,14 @@ export function useMealPlan(id: number | string | undefined) {
   return useQuery({
     queryKey: mealPlanKey(id ?? ''),
     queryFn: () => apiFetch<MealPlan>(`/api/meal-plans/${id}`),
+    enabled: id !== undefined,
+  })
+}
+
+export function useShoppingList(id: number | string | undefined) {
+  return useQuery({
+    queryKey: shoppingListKey(id ?? ''),
+    queryFn: () => apiFetch<ShoppingList>(`/api/meal-plans/${id}/shopping-list`),
     enabled: id !== undefined,
   })
 }

@@ -9,6 +9,7 @@ import { MenuListPage } from './pages/MenuListPage'
 import { RecipeDetailPage } from './pages/RecipeDetailPage'
 import { RecipeFormPage } from './pages/RecipeFormPage'
 import { RecipeListPage } from './pages/RecipeListPage'
+import { ShoppingListPage } from './pages/ShoppingListPage'
 
 function App() {
   return (
@@ -44,6 +45,7 @@ function App() {
           <Route path="/meal-plans/new" element={<MealPlanFormPage />} />
           <Route path="/meal-plans/:id" element={<MealPlanDetailPage />} />
           <Route path="/meal-plans/:id/edit" element={<MealPlanFormPage />} />
+          <Route path="/meal-plans/:id/shopping-list" element={<ShoppingListPage />} />
         </Routes>
       </AppShell.Main>
     </AppShell>
