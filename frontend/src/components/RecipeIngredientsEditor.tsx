@@ -5,6 +5,7 @@ import { notifications } from '@mantine/notifications'
 import { useCreateIngredient, useIngredients } from '../api/ingredients'
 import { CUT_TYPES, STATE_CONDITIONS } from '../api/types'
 import { emptyIngredientRow, type RecipeFormValues, type RecipeIngredientRow } from '../types/recipeForm'
+import { guessIngredientCategory } from '../utils/guessIngredientCategory'
 import { parseIngredientLine } from '../utils/parseIngredientLine'
 import { BulkPasteModal } from './BulkPasteModal'
 import { IngredientPicker } from './IngredientPicker'
@@ -22,7 +23,8 @@ export function RecipeIngredientsEditor({ form }: Props) {
   // Bulk-pasted lines almost never match an existing catalog entry on a fresh install —
   // leaving them unlinked would fail every row's "select an ingredient" validation, which
   // defeats the point of a *bulk* add. So unmatched-but-named lines get their ingredient
-  // auto-created (category defaults to Other; the notification below flags this for review).
+  // auto-created, with a best-guess category from guessIngredientCategory (a keyword
+  // heuristic, not a rigorous classifier -- the notification below flags misses for review).
   const handleBulkAdd = async (text: string) => {
     const lines = text
       .split('\n')
@@ -43,7 +45,10 @@ export function RecipeIngredientsEditor({ form }: Props) {
           if (alreadyCreated !== undefined) {
             ingredientId = alreadyCreated
           } else {
-            const created = await createIngredient.mutateAsync({ name: parsed.name, category: 'OTHER' })
+            const created = await createIngredient.mutateAsync({
+              name: parsed.name,
+              category: guessIngredientCategory(parsed.name),
+            })
             ingredientId = created.id
             createdIdByName.set(key, created.id)
           }
@@ -69,7 +74,7 @@ export function RecipeIngredientsEditor({ form }: Props) {
     const createdCount = createdIdByName.size
     const parts = [`Added ${newRows.length} ingredient${newRows.length === 1 ? '' : 's'}.`]
     if (createdCount > 0) {
-      parts.push(`Created ${createdCount} new catalog ingredient${createdCount === 1 ? '' : 's'} (category: Other) — review and re-categorize when you get a chance.`)
+      parts.push(`Created ${createdCount} new catalog ingredient${createdCount === 1 ? '' : 's'} with a best-guess category — double-check them when you get a chance.`)
     }
     if (unresolvedCount > 0) {
       parts.push(`${unresolvedCount} line${unresolvedCount === 1 ? '' : 's'} couldn't be parsed — check the notes on the new row${unresolvedCount === 1 ? '' : 's'}.`)
@@ -164,7 +169,7 @@ export function RecipeIngredientsEditor({ form }: Props) {
         opened={pasteOpen}
         onClose={() => setPasteOpen(false)}
         title="Paste ingredients"
-        description="One ingredient per line, e.g. '4 cups cherry tomatoes' or '1 tsp salt'. Ingredients not already in your catalog get created automatically (category: Other)."
+        description="One ingredient per line, e.g. '4 cups cherry tomatoes' or '1 tsp salt'. Ingredients not already in your catalog get created automatically, with a best-guess category."
         placeholder={'4 cups cherry tomatoes\n1 tablespoon olive oil\n1 teaspoon kosher salt\n…'}
         onSubmit={handleBulkAdd}
       />
