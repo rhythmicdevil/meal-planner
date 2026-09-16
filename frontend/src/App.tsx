@@ -6,6 +6,7 @@ import { MealPlanListPage } from './pages/MealPlanListPage'
 import { MenuDetailPage } from './pages/MenuDetailPage'
 import { MenuFormPage } from './pages/MenuFormPage'
 import { MenuListPage } from './pages/MenuListPage'
+import { PrepListPage } from './pages/PrepListPage'
 import { RecipeDetailPage } from './pages/RecipeDetailPage'
 import { RecipeFormPage } from './pages/RecipeFormPage'
 import { RecipeImportPage } from './pages/RecipeImportPage'
@@ -48,6 +49,7 @@ function App() {
           <Route path="/meal-plans/:id" element={<MealPlanDetailPage />} />
           <Route path="/meal-plans/:id/edit" element={<MealPlanFormPage />} />
           <Route path="/meal-plans/:id/shopping-list" element={<ShoppingListPage />} />
+          <Route path="/meal-plans/:id/prep-list" element={<PrepListPage />} />
         </Routes>
       </AppShell.Main>
     </AppShell>

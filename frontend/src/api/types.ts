@@ -239,6 +239,24 @@ export interface ShoppingList {
   items: ShoppingListItem[]
 }
 
+export interface PrepListItem {
+  ingredientId: number
+  ingredientName: string
+  amount: number | null
+  unit: string | null
+  cutType: CutType
+  cutTypeOther: string | null
+  stateCondition: StateCondition | null
+  stateConditionOther: string | null
+  toTaste: boolean
+  sourceRecipes: RecipeSummary[]
+}
+
+export interface PrepList {
+  mealPlanId: number
+  items: PrepListItem[]
+}
+
 export interface ApiError {
   message: string
   fieldErrors?: Record<string, string> | null

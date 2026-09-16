@@ -34,6 +34,9 @@ export function MealPlanDetailPage() {
           <Button component={Link} to={`/meal-plans/${mealPlan.id}/shopping-list`}>
             Shopping List
           </Button>
+          <Button component={Link} to={`/meal-plans/${mealPlan.id}/prep-list`}>
+            Prep List
+          </Button>
           <Button component={Link} to={`/meal-plans/${mealPlan.id}/edit`} variant="default">
             Edit
           </Button>
