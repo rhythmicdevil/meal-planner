@@ -46,6 +46,12 @@ describe('parseIngredientLine', () => {
     ])
   })
 
+  it('strips chained leading prep-qualifiers ("rinsed and drained canned") into notes', () => {
+    expect(parseIngredientLine('1 cup rinsed and drained canned black beans', [])).toMatchObject([
+      { amount: 1, unit: 'cup', name: 'black beans', cutType: null, notes: 'rinsed, drained, canned' },
+    ])
+  })
+
   it('parses a mixed unicode fraction amount', () => {
     expect(parseIngredientLine('1½ cups arborio rice', [])).toMatchObject([
       { amount: 1.5, unit: 'cups', name: 'arborio rice' },

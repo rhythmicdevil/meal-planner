@@ -24,6 +24,33 @@ const CUT_TYPE_MODIFIERS = new Set([
 
 const SIZE_DESCRIPTORS = new Set(['large', 'small', 'medium', 'jumbo'])
 
+// Prep-state words that describe how the ingredient was bought/prepped, not what it is --
+// e.g. "rinsed and drained canned black beans" should name the ingredient "black beans",
+// not carry the prep instructions in the catalog name. Chained with "and"/commas below.
+const PREP_QUALIFIER_WORDS = new Set([
+  'rinsed',
+  'drained',
+  'canned',
+  'peeled',
+  'seeded',
+  'deveined',
+  'boneless',
+  'skinless',
+  'trimmed',
+  'stemmed',
+  'pitted',
+  'shelled',
+  'husked',
+  'zested',
+  'juiced',
+  'toasted',
+  'roasted',
+  'thawed',
+  'frozen',
+  'dried',
+  'cooked',
+])
+
 const VULGAR_FRACTIONS: Record<string, number> = {
   '¼': 0.25,
   '½': 0.5,
@@ -185,6 +212,19 @@ function stripLeadingDescriptors(name: string): { name: string; cutType: CutType
 
   while (words.length > 1 && SIZE_DESCRIPTORS.has(words[0].toLowerCase())) {
     leftovers.push(words.shift()!)
+  }
+
+  while (words.length > 1) {
+    const first = words[0].toLowerCase().replace(/,$/, '')
+    if (PREP_QUALIFIER_WORDS.has(first)) {
+      leftovers.push(words.shift()!)
+      continue
+    }
+    if (first === 'and' && words.length > 2 && PREP_QUALIFIER_WORDS.has(words[1].toLowerCase())) {
+      words.shift()
+      continue
+    }
+    break
   }
 
   if (words.length > 1) {
