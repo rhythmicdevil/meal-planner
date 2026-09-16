@@ -7,13 +7,7 @@ import { useRecipes } from '../api/recipes'
 import { ApiRequestError } from '../api/client'
 import { useCreateMenu, useMenu, useUpdateMenu } from '../api/menus'
 import type { MenuRequest } from '../api/types'
-
-interface MenuFormValues {
-  name: string
-  recipeIds: string[]
-}
-
-const emptyValues: MenuFormValues = { name: '', recipeIds: [] }
+import { emptyMenuFormValues, type MenuFormValues } from '../types/menuForm'
 
 export function MenuFormPage() {
   const { id } = useParams<{ id: string }>()
@@ -27,7 +21,7 @@ export function MenuFormPage() {
 
   const form = useForm<MenuFormValues>({
     mode: 'controlled',
-    initialValues: emptyValues,
+    initialValues: emptyMenuFormValues,
     validate: {
       name: (value) => (value.trim() ? null : 'Name is required'),
     },

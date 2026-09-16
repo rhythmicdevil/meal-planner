@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.nullValue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -42,7 +43,7 @@ class RecipeControllerTest extends AbstractApiTest {
     }
 
     @Test
-    void createThenUpdate() throws Exception {
+    void createFetchUpdateAndDelete() throws Exception {
         Ingredient onion = ingredientRepository.save(new Ingredient("yellow onion", IngredientCategory.PRODUCE));
 
         RecipeRequest createRequest = new RecipeRequest(
@@ -80,6 +81,12 @@ class RecipeControllerTest extends AbstractApiTest {
                         .content(objectMapper.writeValueAsString(updateRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Weeknight Tacos v2"));
+
+        mockMvc.perform(authenticated(delete("/api/recipes/" + recipeId)))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(authenticated(get("/api/recipes/" + recipeId)))
+                .andExpect(status().isNotFound());
     }
 
     @Test

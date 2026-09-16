@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Service
+@Transactional
 public class ShoppingListService {
 
     private final MealPlanRepository mealPlanRepository;
@@ -140,8 +141,8 @@ public class ShoppingListService {
             ));
         }
 
-        // grouped by category (in its declared enum order -- produce, dairy, pantry,
-        // protein, spice, other), then alphabetically by ingredient within each group.
+        // grouped by category in its declared (grocery-store walking) order, then
+        // alphabetically by ingredient within each group.
         items.sort(Comparator.comparing(ShoppingListItemResponse::category)
                 .thenComparing(ShoppingListItemResponse::ingredientName, String.CASE_INSENSITIVE_ORDER));
         return items;

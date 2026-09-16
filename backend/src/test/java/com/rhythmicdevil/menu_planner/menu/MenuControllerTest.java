@@ -7,7 +7,6 @@ import com.rhythmicdevil.menu_planner.support.AbstractApiTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.Set;

@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -82,6 +83,41 @@ class MealPlanControllerTest extends AbstractApiTest {
         mockMvc.perform(authenticated(get("/api/meal-plans/" + mealPlanId)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items[0].recipe.name").value("Pancakes v2"));
+    }
+
+    @Test
+    void updateThenDeleteMealPlan() throws Exception {
+        Recipe pancakes = recipeRepository.save(new Recipe("Pancakes"));
+        Recipe waffles = recipeRepository.save(new Recipe("Waffles"));
+
+        MealPlanRequest request = new MealPlanRequest(
+                "This Week", null, null,
+                List.of(new MealPlanItemRequest(MealPlanItemType.RECIPE, pancakes.getId(), null)));
+
+        String createResponse = mockMvc.perform(authenticated(post("/api/meal-plans"))
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        Long mealPlanId = objectMapper.readTree(createResponse).get("id").asLong();
+
+        // replace the items wholesale with a different recipe
+        MealPlanRequest updateRequest = new MealPlanRequest(
+                "This Week v2", null, null,
+                List.of(new MealPlanItemRequest(MealPlanItemType.RECIPE, waffles.getId(), null)));
+
+        mockMvc.perform(authenticated(put("/api/meal-plans/" + mealPlanId))
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("This Week v2"))
+                .andExpect(jsonPath("$.items[0].recipe.name").value("Waffles"));
+
+        mockMvc.perform(authenticated(delete("/api/meal-plans/" + mealPlanId)))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(authenticated(get("/api/meal-plans/" + mealPlanId)))
+                .andExpect(status().isNotFound());
     }
 
     @Test

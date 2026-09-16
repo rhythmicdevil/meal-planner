@@ -9,7 +9,6 @@ const RULES: { pattern: RegExp; category: IngredientCategory }[] = [
   // specific multi-word phrases that would otherwise be caught by a more generic rule below
   { pattern: /\bbell pepper/, category: 'PRODUCE' },
   { pattern: /\bgreen onion|\bscallion/, category: 'PRODUCE' },
-  { pattern: /\bground ginger|\bginger powder/, category: 'BAKING_AND_SPICES' },
   { pattern: /\bolive oil|\bvegetable oil|\bcanola oil|\bsesame oil|\bavocado oil/, category: 'CONDIMENTS_AND_DRESSINGS' },
   { pattern: /\brice vinegar|\bbalsamic vinegar|\bcider vinegar|\bwine vinegar/, category: 'CONDIMENTS_AND_DRESSINGS' },
   { pattern: /\bvegetable (stock|broth)|\bchicken (stock|broth)|\bbeef (stock|broth)/, category: 'CANNED_GOODS_AND_SOUP' },

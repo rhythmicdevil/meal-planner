@@ -10,8 +10,10 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -29,7 +31,7 @@ class IngredientControllerTest extends AbstractApiTest {
     }
 
     @Test
-    void createThenFetchIngredient() throws Exception {
+    void createFetchUpdateAndDelete() throws Exception {
         IngredientRequest request = new IngredientRequest(
                 "yellow onion", Set.of("onion", "spanish onion"), "each", IngredientCategory.PRODUCE);
 
@@ -54,6 +56,22 @@ class IngredientControllerTest extends AbstractApiTest {
         mockMvc.perform(authenticated(get("/api/ingredients")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("yellow onion"));
+
+        IngredientRequest updateRequest = new IngredientRequest(
+                "yellow onion", Set.of("onion", "spanish onion", "brown onion"), "each", IngredientCategory.CANNED_GOODS_AND_SOUP);
+
+        mockMvc.perform(authenticated(put("/api/ingredients/" + id))
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.category").value("CANNED_GOODS_AND_SOUP"))
+                .andExpect(jsonPath("$.aliases", containsInAnyOrder("onion", "spanish onion", "brown onion")));
+
+        mockMvc.perform(authenticated(delete("/api/ingredients/" + id)))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(authenticated(get("/api/ingredients/" + id)))
+                .andExpect(status().isNotFound());
     }
 
     @Test
