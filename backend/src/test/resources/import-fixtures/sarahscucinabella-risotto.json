@@ -1,0 +1,84 @@
+{
+  "@context": "http://schema.org",
+  "@type": "Recipe",
+  "name": "Roasted Tomato Risotto",
+  "author": {
+    "@type": "Person",
+    "name": "Sarah Walker Caron"
+  },
+  "datePublished": "2024-09-14",
+  "recipeYield": 4,
+  "description": "Creamy, comforting and lush, this Roasted Tomato Risotto is a perfect late summer/early autumn meal to share with those you love.",
+  "image": [
+    "https://sarahscucinabella.com/wp-content/uploads/2024/09/Roasted-Tomato-Risotto-5-720x720.jpg",
+    "https://sarahscucinabella.com/wp-content/uploads/2024/09/Roasted-Tomato-Risotto-5-720x540.jpg",
+    "https://sarahscucinabella.com/wp-content/uploads/2024/09/Roasted-Tomato-Risotto-5-540x720.jpg",
+    "https://sarahscucinabella.com/wp-content/uploads/2024/09/Roasted-Tomato-Risotto-5-720x405.jpg",
+    "https://sarahscucinabella.com/wp-content/uploads/2024/09/Roasted-Tomato-Risotto-5-735x490.jpg"
+  ],
+  "recipeCategory": "dinner",
+  "recipeCuisine": "Italian",
+  "prepTime": "PT10M",
+  "cookTime": "PT45M",
+  "performTime": "PT45M",
+  "totalTime": "PT55M",
+  "recipeIngredient": [
+    "4 cups cherry tomatoes",
+    "1 tablespoon olive oil",
+    "1 teaspoon kosher salt",
+    "1/2 teaspoon ground black pepper",
+    "1 tablespoon olive oil",
+    "1 large onion, diced",
+    "1 cup arborio rice",
+    "1/2 cup dry white wine",
+    "4 cups vegetable stock",
+    "1/2 cup freshly grated romano cheese (or vegan equivilent)",
+    "salt and pepper, to taste",
+    "1/4 cup finely sliced fresh basil"
+  ],
+  "recipeInstructions": [
+    {
+      "@type": "HowToStep",
+      "text": "Start with the tomatoes: Preheat the oven to 425 degrees Fahrenheit. In an oven-safe casserole dish, stir together the cherry tomatoes, olive oil and salt. Slide the casserole into the oven and roast for 35-40 minutes stirring once about halfway through.",
+      "position": 1,
+      "name": "Start with the tomatoes: Preheat the oven to...",
+      "url": "https://sarahscucinabella.com/2024/09/17/roasted-tomato-risotto-recipe/#mv_create_1392_1"
+    },
+    {
+      "@type": "HowToStep",
+      "text": "Meanwhile, start the risotto. Gather your ingredients. Heat a large Dutch oven or other similar pan over medium heat. Add the olive oil and let warm. Stir in the onions and cook, without disturbing, for about 6-7 minutes until they begin to get translucent. Stir and then cook for an additional 2-3 minutes. They should be softened, but not browned.",
+      "position": 2,
+      "name": "Meanwhile, start the risotto. Gather your ingredients. Heat...",
+      "url": "https://sarahscucinabella.com/2024/09/17/roasted-tomato-risotto-recipe/#mv_create_1392_2"
+    },
+    {
+      "@type": "HowToStep",
+      "text": "Add the arborio rice to the pot and stir to combine. Cook for 2 minutes and then stir in the white wine. Cook, stirring occasionally, until it's absorbed into the rice — about 3-5 minutes.",
+      "position": 3,
+      "name": "Add the arborio rice to the pot and...",
+      "url": "https://sarahscucinabella.com/2024/09/17/roasted-tomato-risotto-recipe/#mv_create_1392_3"
+    },
+    {
+      "@type": "HowToStep",
+      "text": "Add the vegetable stock a little at a time, stirring after each addition and allowing to absorb into the rice before adding more. Continue until all the stock has been added. Taste a grain of the rice at this point. It should be tender. If not, add a bit more liquid (such as stock or water).",
+      "position": 4,
+      "name": "Add the vegetable stock a little at a...",
+      "url": "https://sarahscucinabella.com/2024/09/17/roasted-tomato-risotto-recipe/#mv_create_1392_4"
+    },
+    {
+      "@type": "HowToStep",
+      "text": "Stir in the romano cheese and season the risotto with salt and pepper. Taste and adjust seasonings as needed.",
+      "position": 5,
+      "name": "Stir in the romano cheese and season the...",
+      "url": "https://sarahscucinabella.com/2024/09/17/roasted-tomato-risotto-recipe/#mv_create_1392_5"
+    },
+    {
+      "@type": "HowToStep",
+      "text": "Divide the risotto onto plates and top each with 1/4 of the roasted tomatoes (including the liquid!). Sprinkle with fresh basil and serve.",
+      "position": 6,
+      "name": "Divide the risotto onto plates and top each...",
+      "url": "https://sarahscucinabella.com/2024/09/17/roasted-tomato-risotto-recipe/#mv_create_1392_6"
+    }
+  ],
+  "url": "https://sarahscucinabella.com/2024/09/17/roasted-tomato-risotto-recipe/"
+}

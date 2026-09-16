@@ -1,0 +1,323 @@
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Article",
+      "@id": "https://www.liveeatlearn.com/marry-me-tortellini-soup/#article",
+      "isPartOf": {
+        "@id": "https://www.liveeatlearn.com/marry-me-tortellini-soup/"
+      },
+      "author": {
+        "name": "Sarah Bond",
+        "@id": "https://www.liveeatlearn.com/#/schema/person/33a4a3d84c1dee069d08677ee885218b"
+      },
+      "headline": "Marry Me Tortellini Soup with Creamy Broth",
+      "datePublished": "2026-08-26T23:02:30+00:00",
+      "dateModified": "2026-08-27T18:50:01+00:00",
+      "wordCount": 1013,
+      "commentCount": 0,
+      "publisher": {
+        "@id": "https://www.liveeatlearn.com/#organization"
+      },
+      "image": {
+        "@id": "https://www.liveeatlearn.com/marry-me-tortellini-soup/#primaryimage"
+      },
+      "thumbnailUrl": "https://www.liveeatlearn.com/wp-content/uploads/2026/08/Marry-Me-Tortellini-Soup-hero-3.jpg",
+      "keywords": [
+        "Basil Recipes",
+        "Carrot Recipes",
+        "Celery Recipes",
+        "Cheese Recipes",
+        "Garlic Recipes",
+        "Kale Recipes",
+        "Tomato Recipes"
+      ],
+      "articleSection": [
+        "Christmas",
+        "Italian Recipes",
+        "Mediterranean Recipes",
+        "Stovetop Recipes",
+        "Valentine's Day",
+        "Vegetarian Dinner Recipes",
+        "Vegetarian Pasta Recipes",
+        "Vegetarian Soup Recipes"
+      ],
+      "inLanguage": "en-US",
+      "potentialAction": [
+        {
+          "@type": "CommentAction",
+          "name": "Comment",
+          "target": [
+            "https://www.liveeatlearn.com/marry-me-tortellini-soup/#respond"
+          ]
+        }
+      ]
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://www.liveeatlearn.com/marry-me-tortellini-soup/",
+      "url": "https://www.liveeatlearn.com/marry-me-tortellini-soup/",
+      "name": "Marry Me Tortellini Soup with Creamy Broth | Live Eat Learn",
+      "isPartOf": {
+        "@id": "https://www.liveeatlearn.com/#website"
+      },
+      "primaryImageOfPage": {
+        "@id": "https://www.liveeatlearn.com/marry-me-tortellini-soup/#primaryimage"
+      },
+      "image": {
+        "@id": "https://www.liveeatlearn.com/marry-me-tortellini-soup/#primaryimage"
+      },
+      "thumbnailUrl": "https://www.liveeatlearn.com/wp-content/uploads/2026/08/Marry-Me-Tortellini-Soup-hero-3.jpg",
+      "datePublished": "2026-08-26T23:02:30+00:00",
+      "dateModified": "2026-08-27T18:50:01+00:00",
+      "description": "This marry me tortellini soup is rich, creamy and loaded with sun dried tomatoes, cheese tortellini and kale in a smoky Tuscan broth. Ready in 30 minutes!",
+      "breadcrumb": {
+        "@id": "https://www.liveeatlearn.com/marry-me-tortellini-soup/#breadcrumb"
+      },
+      "inLanguage": "en-US",
+      "potentialAction": [
+        {
+          "@type": "ReadAction",
+          "target": [
+            "https://www.liveeatlearn.com/marry-me-tortellini-soup/"
+          ]
+        }
+      ]
+    },
+    {
+      "@type": "ImageObject",
+      "inLanguage": "en-US",
+      "@id": "https://www.liveeatlearn.com/marry-me-tortellini-soup/#primaryimage",
+      "url": "https://www.liveeatlearn.com/wp-content/uploads/2026/08/Marry-Me-Tortellini-Soup-hero-3.jpg",
+      "contentUrl": "https://www.liveeatlearn.com/wp-content/uploads/2026/08/Marry-Me-Tortellini-Soup-hero-3.jpg",
+      "width": 1200,
+      "height": 800,
+      "caption": "Bowl of tortellini soup with vegetables and greens, topped with grated cheese, next to a loaf of bread and a grater on a green tabletop."
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://www.liveeatlearn.com/marry-me-tortellini-soup/#breadcrumb",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://www.liveeatlearn.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Recipes",
+          "item": "https://www.liveeatlearn.com/recipes/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Dinners",
+          "item": "https://www.liveeatlearn.com/category/eat/vegetarian-dinner-recipes/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 4,
+          "name": "Soups",
+          "item": "https://www.liveeatlearn.com/category/eat/vegetarian-dinner-recipes/vegetarian-soup-recipes/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 5,
+          "name": "Marry Me Tortellini Soup with Creamy Broth"
+        }
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://www.liveeatlearn.com/#website",
+      "url": "https://www.liveeatlearn.com/",
+      "name": "Live Eat Learn",
+      "description": "Easy vegetarian recipes, one ingredient at a time",
+      "publisher": {
+        "@id": "https://www.liveeatlearn.com/#organization"
+      },
+      "potentialAction": [
+        {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://www.liveeatlearn.com/?s={search_term_string}"
+          },
+          "query-input": {
+            "@type": "PropertyValueSpecification",
+            "valueRequired": true,
+            "valueName": "search_term_string"
+          }
+        }
+      ],
+      "inLanguage": "en-US"
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://www.liveeatlearn.com/#organization",
+      "name": "Live Eat Learn",
+      "url": "https://www.liveeatlearn.com/",
+      "logo": {
+        "@type": "ImageObject",
+        "inLanguage": "en-US",
+        "@id": "https://www.liveeatlearn.com/#/schema/logo/image/",
+        "url": "https://www.liveeatlearn.com/wp-content/uploads/2015/10/live_eat_learn_logo.jpg",
+        "contentUrl": "https://www.liveeatlearn.com/wp-content/uploads/2015/10/live_eat_learn_logo.jpg",
+        "width": 600,
+        "height": 221,
+        "caption": "Live Eat Learn"
+      },
+      "image": {
+        "@id": "https://www.liveeatlearn.com/#/schema/logo/image/"
+      },
+      "sameAs": [
+        "https://www.facebook.com/liveeatlearn/",
+        "https://x.com/liveeatlearn",
+        "https://instagram.com/liveeatlearn/",
+        "https://www.linkedin.com/in/sarahlorrainebond",
+        "https://www.pinterest.com/live_eat_learn/",
+        "https://tiktok.com/@liveeatlearn",
+        "https://www.youtube.com/c/liveeatlearn"
+      ]
+    },
+    {
+      "@type": "Person",
+      "@id": "https://www.liveeatlearn.com/#/schema/person/33a4a3d84c1dee069d08677ee885218b",
+      "name": "Sarah Bond",
+      "image": {
+        "@type": "ImageObject",
+        "inLanguage": "en-US",
+        "@id": "https://secure.gravatar.com/avatar/9f24172c555b289a188fba12d7c6efebea801f46d12ca1be77e88f54ab178b43?s=96&d=mm&r=g",
+        "url": "https://secure.gravatar.com/avatar/9f24172c555b289a188fba12d7c6efebea801f46d12ca1be77e88f54ab178b43?s=96&d=mm&r=g",
+        "contentUrl": "https://secure.gravatar.com/avatar/9f24172c555b289a188fba12d7c6efebea801f46d12ca1be77e88f54ab178b43?s=96&d=mm&r=g",
+        "caption": "Sarah Bond"
+      },
+      "description": "A flavor-loving nutritionist and sensory science specialist showing you how to make easy vegetarian recipes, one ingredient at a time. Read more…",
+      "sameAs": [
+        "https://www.liveeatlearn.com/sarah-bond/",
+        "https://www.facebook.com/liveeatlearn/",
+        "https://www.instagram.com/liveeatlearn/",
+        "https://www.linkedin.com/in/sarahlorrainebond/",
+        "http://pinterest.com/live_eat_learn/",
+        "https://x.com/liveeatlearn",
+        "https://www.youtube.com/c/liveeatlearn"
+      ],
+      "honorificSuffix": "MSc",
+      "gender": "Female",
+      "knowsAbout": [
+        "sensory science",
+        "food science",
+        "human nutrition",
+        "vegetarian cooking"
+      ],
+      "knowsLanguage": [
+        "English",
+        "Dutch"
+      ],
+      "jobTitle": "Vegetarian Food Blogger",
+      "worksFor": "Eats Media Group LLC",
+      "url": "https://www.liveeatlearn.com/sarah-bond/"
+    },
+    {
+      "@type": "Recipe",
+      "name": "Marry Me Tortellini Soup (Creamy Broth)",
+      "author": {
+        "@id": "https://www.liveeatlearn.com/#/schema/person/33a4a3d84c1dee069d08677ee885218b"
+      },
+      "description": "This marry me tortellini soup is rich, creamy, and loaded with sun-dried tomatoes, cheese tortellini, and kale in a smoky Tuscan broth. Ready in 30 minutes!",
+      "datePublished": "2026-08-26T17:02:30+00:00",
+      "image": [
+        "https://www.liveeatlearn.com/wp-content/uploads/2026/08/Marry-Me-Tortellini-Soup-hero-3.jpg",
+        "https://www.liveeatlearn.com/wp-content/uploads/2026/08/Marry-Me-Tortellini-Soup-hero-3-500x500.jpg",
+        "https://www.liveeatlearn.com/wp-content/uploads/2026/08/Marry-Me-Tortellini-Soup-hero-3-500x375.jpg",
+        "https://www.liveeatlearn.com/wp-content/uploads/2026/08/Marry-Me-Tortellini-Soup-hero-3-480x270.jpg"
+      ],
+      "video": {
+        "name": "Marry Me Tortellini Soup (In Creamy Broth)",
+        "description": "My marry me tortellini soup is rich and creamy, with sun-dried tomatoes, fresh cheese tortellini, and a full bunch of kale simmered in a smoky Tuscan tomato broth. It comes together in one pot in about 30 minutes (and tastes like the kind of soup that earns a marriage proposal).\n\nGrab the full written recipe here:\n\nMy debut vegetarian cookbook is now available! This hardcover spiral-bound cookbook includes over 100 easy vegetarian recipes, and I can't wait for you to cook from it:\n\nInstagram:\nTikTok:\nFacebook:\nPinterest:",
+        "uploadDate": "2026-08-27T18:37:56+00:00",
+        "duration": "PT19S",
+        "thumbnailUrl": "https://i.ytimg.com/vi/FUafT-rV5Qo/hqdefault.jpg",
+        "embedUrl": "https://www.youtube.com/embed/FUafT-rV5Qo?feature=oembed",
+        "contentUrl": "https://www.youtube.com/watch?v=FUafT-rV5Qo",
+        "@type": "VideoObject"
+      },
+      "recipeYield": [
+        "4",
+        "4 servings"
+      ],
+      "prepTime": "PT5M",
+      "cookTime": "PT25M",
+      "totalTime": "PT30M",
+      "recipeIngredient": [
+        "2 Tbsp unsalted butter (28 g)",
+        "1 cup finely diced carrots (about 3 carrots)",
+        "1 cup finely diced celery (about 3 stalks)",
+        "4 cloves garlic (minced)",
+        "½ cup sun-dried tomatoes (finely diced, packed in oil)",
+        "1 tsp each oregano, crushed red pepper flakes, smoked paprika",
+        "½ tsp each salt and pepper",
+        "1 15-oz can diced tomatoes (425 g)",
+        "4 cups vegetable broth (1 L)",
+        "1 10-oz package fresh cheese tortellini (283 g)",
+        "4 to 5 cups roughly chopped kale (about 1 bunch, we prefer Lacinato kale)",
+        "½ cup heavy cream (120 mL)",
+        "¼ cup finely chopped fresh basil",
+        "Serve with parmesan, crusty bread"
+      ],
+      "recipeInstructions": [
+        {
+          "@type": "HowToStep",
+          "text": "Flavor Base: Melt 2 Tbsp&#32;unsalted butter in a large pot over medium heat. Add 1 cup&#32;finely diced carrots and 1 cup&#32;finely diced celery, cooking until soft, about 5 to 7 minutes. Stir in 4 cloves&#32;garlic, ½ cup&#32;sun-dried tomatoes and all spices. Continue cooking for one minute until garlic is fragrant.",
+          "name": "Flavor Base",
+          "url": "https://www.liveeatlearn.com/marry-me-tortellini-soup/#wprm-recipe-140081-step-0-0",
+          "image": "https://www.liveeatlearn.com/wp-content/uploads/2026/08/Marry-Me-Tortellini-Soup-process-4.jpg"
+        },
+        {
+          "@type": "HowToStep",
+          "text": "Simmer: Stir in 1 15-oz can&#32;diced tomatoes and 4 cups&#32;vegetable broth. Increase heat to medium-high, then bring to a gentle simmer.",
+          "name": "Simmer",
+          "url": "https://www.liveeatlearn.com/marry-me-tortellini-soup/#wprm-recipe-140081-step-0-1",
+          "image": "https://www.liveeatlearn.com/wp-content/uploads/2026/08/Marry-Me-Tortellini-Soup-process-6.jpg"
+        },
+        {
+          "@type": "HowToStep",
+          "text": "Pasta: Once simmering, stir in 1 10-oz package&#32;fresh cheese tortellini and 4 to 5 cups&#32;roughly chopped kale, pushing the tortellini down into the broth so that they&#39;re mostly covered. Cover and let gently simmer.Check the package instructions and begin testing the tortellini for doneness according to the cook time on the package. It may need a few extra minutes because of the thickness of the soup. Tortellini is done when soft.",
+          "name": "Pasta",
+          "url": "https://www.liveeatlearn.com/marry-me-tortellini-soup/#wprm-recipe-140081-step-0-2",
+          "image": "https://www.liveeatlearn.com/wp-content/uploads/2026/08/Marry-Me-Tortellini-Soup-process-9.jpg"
+        },
+        {
+          "@type": "HowToStep",
+          "text": "Serve: Remove from heat, then stir in ½ cup&#32;heavy cream and ¼ cup&#32;finely chopped fresh basil. Serve warm, liberally topped with parmesan and a side of crusty bread.",
+          "name": "Serve",
+          "url": "https://www.liveeatlearn.com/marry-me-tortellini-soup/#wprm-recipe-140081-step-0-3",
+          "image": "https://www.liveeatlearn.com/wp-content/uploads/2026/08/Marry-Me-Tortellini-Soup-hero-1.jpg"
+        }
+      ],
+      "recipeCategory": [
+        "Main Dishes",
+        "Soups"
+      ],
+      "recipeCuisine": [
+        "Italian",
+        "Mediterranean"
+      ],
+      "suitableForDiet": [
+        "https://schema.org/DiabeticDiet",
+        "https://schema.org/HalalDiet",
+        "https://schema.org/HinduDiet",
+        "https://schema.org/KosherDiet",
+        "https://schema.org/VegetarianDiet"
+      ],
+      "keywords": "marry me soup, marry me tortellini, soup with tortellini, tortellini soup",
+      "@id": "https://www.liveeatlearn.com/marry-me-tortellini-soup/#recipe",
+      "isPartOf": {
+        "@id": "https://www.liveeatlearn.com/marry-me-tortellini-soup/#article"
+      },
+      "mainEntityOfPage": "https://www.liveeatlearn.com/marry-me-tortellini-soup/"
+    }
+  ]
+}
