@@ -159,6 +159,16 @@ function parseLeadingAmount(text: string): { amount: number; rest: string } | nu
     return { amount: VULGAR_FRACTIONS[frac], rest }
   }
 
+  // Amount range ("14 to 15 ounces", "2-3 cloves") -- take the upper bound, favoring
+  // having enough over running short (checked before the plain integer case below,
+  // which would otherwise grab just the first number and leave "to 15 ounces..." as
+  // unparseable junk).
+  match = trimmed.match(/^(\d+(?:\.\d+)?)\s*(?:to|-)\s*(\d+(?:\.\d+)?)\s*(.*)$/)
+  if (match) {
+    const [, , upper, rest] = match
+    return { amount: Number(upper), rest }
+  }
+
   // Decimal or integer: "4 cups", "1.5 cups"
   match = trimmed.match(/^(\d+(?:\.\d+)?)\s*(.*)$/)
   if (match) {

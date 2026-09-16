@@ -46,6 +46,18 @@ describe('parseIngredientLine', () => {
     ])
   })
 
+  it('takes the upper bound of a word-separated amount range', () => {
+    expect(parseIngredientLine('14 to 15 ounces firm tofu', [])).toMatchObject([
+      { amount: 15, unit: 'ounces', name: 'firm tofu', notes: '' },
+    ])
+  })
+
+  it('takes the upper bound of a hyphen-separated amount range', () => {
+    expect(parseIngredientLine('2-3 cloves garlic', [])).toMatchObject([
+      { amount: 3, unit: 'cloves', name: 'garlic', notes: '' },
+    ])
+  })
+
   it('strips chained leading prep-qualifiers ("rinsed and drained canned") into notes', () => {
     expect(parseIngredientLine('1 cup rinsed and drained canned black beans', [])).toMatchObject([
       { amount: 1, unit: 'cup', name: 'black beans', cutType: null, notes: 'rinsed, drained, canned' },
