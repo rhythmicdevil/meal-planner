@@ -190,6 +190,7 @@ Since real-world recipes you'll be pulling from tend to come from sites like Blu
 - Tags, categories, aisle-based shopping list ordering
 - Ingredient-specific unit conversion table (e.g. "1 onion ≈ 150g") for fuller shopping-list merging
 - Browser extension + `POST /api/import/raw` endpoint reusing the same normalization pipeline as Phase 4
+- Ingredient catalog management UI (list/edit/delete ingredients directly) — today ingredients can only be created inline via the recipe picker or bulk-paste; there's no screen to browse the catalog, fix a bad auto-created name, or delete an unused entry without going through the API directly
 
 ---
 
