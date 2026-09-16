@@ -70,9 +70,18 @@ describe('parseIngredientLine', () => {
     ])
   })
 
-  it('stashes the whole line in notes when it truly cannot be parsed', () => {
+  it('treats a bare line with no leading amount as the ingredient name, not empty notes', () => {
     expect(parseIngredientLine('a pinch of magic', [])).toMatchObject([
-      { amount: null, unit: '', name: '', notes: 'a pinch of magic', matchedIngredientId: null },
+      { amount: null, unit: '', name: 'a pinch of magic', notes: '', matchedIngredientId: null },
+    ])
+  })
+
+  it('treats a bare ingredient name with no amount/unit the same way', () => {
+    expect(parseIngredientLine('salt', [])).toMatchObject([
+      { amount: null, unit: '', name: 'salt', notes: '', matchedIngredientId: null },
+    ])
+    expect(parseIngredientLine('Avocado oil spray', [])).toMatchObject([
+      { amount: null, unit: '', name: 'Avocado oil spray', notes: '', matchedIngredientId: null },
     ])
   })
 

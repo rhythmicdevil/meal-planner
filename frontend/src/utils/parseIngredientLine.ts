@@ -337,23 +337,26 @@ export function parseIngredientLine(line: string, catalog: Ingredient[]): Parsed
   const leading = parseLeadingAmount(raw)
 
   if (!leading) {
+    // No leading amount at all -- could be a combined/"to taste" line ("salt and pepper"),
+    // or just a bare ingredient name with no quantity ("salt", "Avocado oil spray"). Either
+    // way, splitCombinedIngredients always returns at least one name (the whole line, if it
+    // found nothing to split on), so that's always what becomes this row's name -- leaving
+    // the name empty here would produce an unselected ingredient row that silently fails
+    // the "select an ingredient" validation on submit.
     const combined = splitCombinedIngredients(raw)
-    if (combined.names.length > 1 || combined.notes) {
-      return combined.names.map((rawName) => {
-        const stripped = stripTrailingParenthetical(rawName, combined.notes)
-        const { name, cutType, notes } = extractCutTypeAndClean(stripped.name, stripped.notes)
-        return {
-          raw,
-          amount: null,
-          unit: '',
-          name,
-          cutType,
-          notes,
-          matchedIngredientId: matchCatalogIngredient(name, catalog),
-        }
-      })
-    }
-    return [{ raw, amount: null, unit: '', name: '', cutType: null, notes: raw, matchedIngredientId: null }]
+    return combined.names.map((rawName) => {
+      const stripped = stripTrailingParenthetical(rawName, combined.notes)
+      const { name, cutType, notes } = extractCutTypeAndClean(stripped.name, stripped.notes)
+      return {
+        raw,
+        amount: null,
+        unit: '',
+        name,
+        cutType,
+        notes,
+        matchedIngredientId: matchCatalogIngredient(name, catalog),
+      }
+    })
   }
 
   const { unit, remainder } = parseUnitAndRemainder(leading.rest)
