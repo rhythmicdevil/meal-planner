@@ -121,7 +121,7 @@ class ShoppingListServiceTest {
         MealPlan mealPlan = new MealPlan("This Week");
         mealPlan.replaceItems(List.of(MealPlanItem.forMenu(mealPlan, tacoNight)));
 
-        List<Recipe> flattened = ShoppingListService.flattenRecipes(mealPlan);
+        List<Recipe> flattened = mealPlan.flattenRecipes();
 
         assertThat(flattened).containsExactly(salsa);
     }
@@ -159,7 +159,7 @@ class ShoppingListServiceTest {
                 MealPlanItem.forRecipe(mealPlan, salsa)
         ));
 
-        List<Recipe> flattened = ShoppingListService.flattenRecipes(mealPlan);
+        List<Recipe> flattened = mealPlan.flattenRecipes();
         List<ShoppingListItemResponse> items = ShoppingListService.computeItems(flattened);
 
         assertThat(items).hasSize(1);

@@ -2,7 +2,6 @@ package com.rhythmicdevil.menu_planner.shoppinglist;
 
 import com.rhythmicdevil.menu_planner.ingredient.Ingredient;
 import com.rhythmicdevil.menu_planner.mealplan.MealPlan;
-import com.rhythmicdevil.menu_planner.mealplan.MealPlanItem;
 import com.rhythmicdevil.menu_planner.mealplan.MealPlanRepository;
 import com.rhythmicdevil.menu_planner.recipe.Recipe;
 import com.rhythmicdevil.menu_planner.recipe.RecipeIngredient;
@@ -38,21 +37,8 @@ public class ShoppingListService {
     public ShoppingListResponse generate(Long mealPlanId) {
         MealPlan mealPlan = mealPlanRepository.findById(mealPlanId)
                 .orElseThrow(() -> new EntityNotFoundException("MealPlan " + mealPlanId + " not found"));
-        List<Recipe> recipes = flattenRecipes(mealPlan);
+        List<Recipe> recipes = mealPlan.flattenRecipes();
         return new ShoppingListResponse(mealPlanId, computeItems(recipes));
-    }
-
-    // Not deduped -- the same recipe reached twice (direct + via a menu, or a repeated
-    // meal-plan item) means it's being cooked twice, so its ingredients count twice.
-    static List<Recipe> flattenRecipes(MealPlan mealPlan) {
-        List<Recipe> recipes = new ArrayList<>();
-        for (MealPlanItem item : mealPlan.getItems()) {
-            switch (item.getItemType()) {
-                case RECIPE -> recipes.add(item.getRecipe());
-                case MENU -> recipes.addAll(item.getMenu().getRecipes());
-            }
-        }
-        return recipes;
     }
 
     // Keyed by Ingredient reference (not id) -- within one Hibernate session the same

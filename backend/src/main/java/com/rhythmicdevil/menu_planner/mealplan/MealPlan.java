@@ -1,5 +1,6 @@
 package com.rhythmicdevil.menu_planner.mealplan;
 
+import com.rhythmicdevil.menu_planner.recipe.Recipe;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -75,5 +76,18 @@ public class MealPlan {
     public void replaceItems(List<MealPlanItem> newItems) {
         items.clear();
         items.addAll(newItems);
+    }
+
+    // Not deduped -- the same recipe reached twice (direct + via a menu, or a repeated
+    // meal-plan item) means it's being cooked twice, so its ingredients count twice.
+    public List<Recipe> flattenRecipes() {
+        List<Recipe> recipes = new ArrayList<>();
+        for (MealPlanItem item : items) {
+            switch (item.getItemType()) {
+                case RECIPE -> recipes.add(item.getRecipe());
+                case MENU -> recipes.addAll(item.getMenu().getRecipes());
+            }
+        }
+        return recipes;
     }
 }

@@ -7,6 +7,7 @@ import com.rhythmicdevil.menu_planner.mealplan.dto.MealPlanItemRequest;
 import com.rhythmicdevil.menu_planner.mealplan.dto.MealPlanRequest;
 import com.rhythmicdevil.menu_planner.menu.Menu;
 import com.rhythmicdevil.menu_planner.menu.MenuRepository;
+import com.rhythmicdevil.menu_planner.recipe.CutType;
 import com.rhythmicdevil.menu_planner.recipe.Recipe;
 import com.rhythmicdevil.menu_planner.recipe.RecipeIngredient;
 import com.rhythmicdevil.menu_planner.recipe.RecipeRepository;
@@ -199,6 +200,42 @@ class MealPlanControllerTest extends AbstractApiTest {
     @Test
     void shoppingListForUnknownMealPlan_isNotFound() throws Exception {
         mockMvc.perform(authenticated(get("/api/meal-plans/999999/shopping-list")))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void prepListEndpoint_returnsGeneratedList() throws Exception {
+        Ingredient onion = ingredientRepository.save(new Ingredient("onion", IngredientCategory.PRODUCE));
+        Recipe soup = new Recipe("Soup");
+        RecipeIngredient line = new RecipeIngredient(onion, new BigDecimal("1"), "cup");
+        line.setCutType(CutType.DICED);
+        soup.replaceIngredients(List.of(line));
+        soup = recipeRepository.save(soup);
+
+        MealPlanRequest request = new MealPlanRequest(
+                "This Week", null, null,
+                List.of(new MealPlanItemRequest(MealPlanItemType.RECIPE, soup.getId(), null)));
+
+        String createResponse = mockMvc.perform(authenticated(post("/api/meal-plans"))
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        Long mealPlanId = objectMapper.readTree(createResponse).get("id").asLong();
+
+        mockMvc.perform(authenticated(get("/api/meal-plans/" + mealPlanId + "/prep-list")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mealPlanId").value(mealPlanId))
+                .andExpect(jsonPath("$.items[0].ingredientName").value("onion"))
+                .andExpect(jsonPath("$.items[0].amount").value(1.0))
+                .andExpect(jsonPath("$.items[0].unit").value("cup"))
+                .andExpect(jsonPath("$.items[0].cutType").value("DICED"))
+                .andExpect(jsonPath("$.items[0].toTaste").value(false));
+    }
+
+    @Test
+    void prepListForUnknownMealPlan_isNotFound() throws Exception {
+        mockMvc.perform(authenticated(get("/api/meal-plans/999999/prep-list")))
                 .andExpect(status().isNotFound());
     }
 }

@@ -5,12 +5,14 @@ import java.util.Map;
 
 // Groups units that can be summed together (volume, weight) with a common base for conversion.
 // Anything not in this table (count-style units like "each"/"clove", or an unrecognized unit
-// string) only combines with an exact-matching unit string -- see ShoppingListService.
-class UnitConversion {
+// string) only combines with an exact-matching unit string -- see ShoppingListService. Public
+// so preplist.PrepListService (a different package, same unit-compatibility rules) can reuse it
+// rather than duplicating this table.
+public class UnitConversion {
 
-    enum Kind { VOLUME, WEIGHT }
+    public enum Kind { VOLUME, WEIGHT }
 
-    record UnitDef(Kind kind, BigDecimal factorToBase) {
+    public record UnitDef(Kind kind, BigDecimal factorToBase) {
     }
 
     // Volume base unit: milliliter. Weight base unit: gram.
@@ -54,7 +56,7 @@ class UnitConversion {
     private UnitConversion() {
     }
 
-    static UnitDef lookup(String unit) {
+    public static UnitDef lookup(String unit) {
         if (unit == null) return null;
         return UNIT_DEFS.get(unit.trim().toLowerCase());
     }

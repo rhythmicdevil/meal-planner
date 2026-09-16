@@ -2,6 +2,8 @@ package com.rhythmicdevil.menu_planner.mealplan;
 
 import com.rhythmicdevil.menu_planner.mealplan.dto.MealPlanRequest;
 import com.rhythmicdevil.menu_planner.mealplan.dto.MealPlanResponse;
+import com.rhythmicdevil.menu_planner.preplist.PrepListService;
+import com.rhythmicdevil.menu_planner.preplist.dto.PrepListResponse;
 import com.rhythmicdevil.menu_planner.shoppinglist.ShoppingListService;
 import com.rhythmicdevil.menu_planner.shoppinglist.dto.ShoppingListResponse;
 import jakarta.validation.Valid;
@@ -24,10 +26,13 @@ public class MealPlanController {
 
     private final MealPlanService mealPlanService;
     private final ShoppingListService shoppingListService;
+    private final PrepListService prepListService;
 
-    public MealPlanController(MealPlanService mealPlanService, ShoppingListService shoppingListService) {
+    public MealPlanController(
+            MealPlanService mealPlanService, ShoppingListService shoppingListService, PrepListService prepListService) {
         this.mealPlanService = mealPlanService;
         this.shoppingListService = shoppingListService;
+        this.prepListService = prepListService;
     }
 
     @GetMapping
@@ -43,6 +48,11 @@ public class MealPlanController {
     @GetMapping("/{id}/shopping-list")
     public ShoppingListResponse shoppingList(@PathVariable Long id) {
         return shoppingListService.generate(id);
+    }
+
+    @GetMapping("/{id}/prep-list")
+    public PrepListResponse prepList(@PathVariable Long id) {
+        return prepListService.generate(id);
     }
 
     @PostMapping
