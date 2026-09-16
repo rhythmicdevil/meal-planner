@@ -2,6 +2,7 @@ package com.rhythmicdevil.menu_planner.config;
 
 import com.rhythmicdevil.menu_planner.recipeimport.RecipeImportException;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -37,5 +38,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RecipeImportException.class)
     public ResponseEntity<ApiError> handleImportFailure(RecipeImportException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiError(ex.getMessage()));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiError> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiError(
+                "This conflicts with existing data -- e.g. a duplicate name, or another record (like a menu "
+                        + "or meal plan) that still depends on it. Adjust and try again."));
     }
 }

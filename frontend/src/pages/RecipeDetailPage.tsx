@@ -12,6 +12,7 @@ import {
   Title,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
+import { ApiRequestError } from '../api/client'
 import { useDeleteRecipe, useRecipe } from '../api/recipes'
 
 export function RecipeDetailPage() {
@@ -25,9 +26,14 @@ export function RecipeDetailPage() {
 
   const handleDelete = async () => {
     if (!window.confirm(`Delete "${recipe.name}"? This can't be undone.`)) return
-    await deleteRecipe.mutateAsync(recipe.id)
-    notifications.show({ message: 'Recipe deleted', color: 'green' })
-    navigate('/recipes')
+    try {
+      await deleteRecipe.mutateAsync(recipe.id)
+      notifications.show({ message: 'Recipe deleted', color: 'green' })
+      navigate('/recipes')
+    } catch (err) {
+      const message = err instanceof ApiRequestError ? err.message : 'Something went wrong'
+      notifications.show({ message, color: 'red' })
+    }
   }
 
   return (

@@ -1,6 +1,7 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Alert, Anchor, Button, Group, List, Loader, Stack, Text, Title } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
+import { ApiRequestError } from '../api/client'
 import { useDeleteMenu, useMenu } from '../api/menus'
 
 export function MenuDetailPage() {
@@ -14,9 +15,14 @@ export function MenuDetailPage() {
 
   const handleDelete = async () => {
     if (!window.confirm(`Delete "${menu.name}"? This can't be undone.`)) return
-    await deleteMenu.mutateAsync(menu.id)
-    notifications.show({ message: 'Menu deleted', color: 'green' })
-    navigate('/menus')
+    try {
+      await deleteMenu.mutateAsync(menu.id)
+      notifications.show({ message: 'Menu deleted', color: 'green' })
+      navigate('/menus')
+    } catch (err) {
+      const message = err instanceof ApiRequestError ? err.message : 'Something went wrong'
+      notifications.show({ message, color: 'red' })
+    }
   }
 
   return (

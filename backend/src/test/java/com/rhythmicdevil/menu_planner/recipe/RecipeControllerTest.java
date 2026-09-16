@@ -3,6 +3,9 @@ package com.rhythmicdevil.menu_planner.recipe;
 import com.rhythmicdevil.menu_planner.ingredient.Ingredient;
 import com.rhythmicdevil.menu_planner.ingredient.IngredientCategory;
 import com.rhythmicdevil.menu_planner.ingredient.IngredientRepository;
+import com.rhythmicdevil.menu_planner.mealplan.MealPlan;
+import com.rhythmicdevil.menu_planner.mealplan.MealPlanItem;
+import com.rhythmicdevil.menu_planner.mealplan.MealPlanRepository;
 import com.rhythmicdevil.menu_planner.recipe.dto.RecipeIngredientRequest;
 import com.rhythmicdevil.menu_planner.recipe.dto.RecipeRequest;
 import com.rhythmicdevil.menu_planner.recipe.dto.RecipeStepDto;
@@ -36,8 +39,12 @@ class RecipeControllerTest extends AbstractApiTest {
     @Autowired
     private RecipeRepository recipeRepository;
 
+    @Autowired
+    private MealPlanRepository mealPlanRepository;
+
     @AfterEach
     void cleanUp() {
+        mealPlanRepository.deleteAll();
         recipeRepository.deleteAll();
         ingredientRepository.deleteAll();
     }
@@ -107,6 +114,17 @@ class RecipeControllerTest extends AbstractApiTest {
                 .andExpect(jsonPath("$.ingredients[0].amount").value(nullValue()))
                 .andExpect(jsonPath("$.ingredients[0].unit").value(nullValue()))
                 .andExpect(jsonPath("$.ingredients[0].notes").value("to taste"));
+    }
+
+    @Test
+    void deleteRecipeReferencedByMealPlan_isConflict() throws Exception {
+        Recipe recipe = recipeRepository.save(new Recipe("Referenced Recipe"));
+        MealPlan mealPlan = new MealPlan("Uses It");
+        mealPlan.replaceItems(List.of(MealPlanItem.forRecipe(mealPlan, recipe)));
+        mealPlanRepository.save(mealPlan);
+
+        mockMvc.perform(authenticated(delete("/api/recipes/" + recipe.getId())))
+                .andExpect(status().isConflict());
     }
 
     @Test
