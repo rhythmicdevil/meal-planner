@@ -8,6 +8,7 @@ import { MenuFormPage } from './pages/MenuFormPage'
 import { MenuListPage } from './pages/MenuListPage'
 import { RecipeDetailPage } from './pages/RecipeDetailPage'
 import { RecipeFormPage } from './pages/RecipeFormPage'
+import { RecipeImportPage } from './pages/RecipeImportPage'
 import { RecipeListPage } from './pages/RecipeListPage'
 import { ShoppingListPage } from './pages/ShoppingListPage'
 
@@ -35,6 +36,7 @@ function App() {
           <Route path="/" element={<Navigate to="/recipes" replace />} />
           <Route path="/recipes" element={<RecipeListPage />} />
           <Route path="/recipes/new" element={<RecipeFormPage />} />
+          <Route path="/recipes/import" element={<RecipeImportPage />} />
           <Route path="/recipes/:id" element={<RecipeDetailPage />} />
           <Route path="/recipes/:id/edit" element={<RecipeFormPage />} />
           <Route path="/menus" element={<MenuListPage />} />

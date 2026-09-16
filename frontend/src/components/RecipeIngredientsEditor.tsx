@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button, Group, NumberInput, Paper, Select, Stack, TextInput } from '@mantine/core'
 import type { UseFormReturnType } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
@@ -12,11 +12,12 @@ import { IngredientPicker } from './IngredientPicker'
 
 interface Props {
   form: UseFormReturnType<RecipeFormValues>
+  initialBulkPasteText?: string
 }
 
-export function RecipeIngredientsEditor({ form }: Props) {
+export function RecipeIngredientsEditor({ form, initialBulkPasteText }: Props) {
   const rows = form.values.ingredients
-  const { data: ingredients = [] } = useIngredients()
+  const { data: ingredients = [], isLoading: isLoadingIngredients } = useIngredients()
   const createIngredient = useCreateIngredient()
   const [pasteOpen, setPasteOpen] = useState(false)
 
@@ -81,6 +82,20 @@ export function RecipeIngredientsEditor({ form }: Props) {
     }
     notifications.show({ message: parts.join(' '), color: unresolvedCount > 0 ? 'yellow' : 'green' })
   }
+
+  // Waits for the catalog to finish loading before auto-importing -- otherwise every line
+  // looks unmatched against an empty catalog and gets (re-)created, colliding with
+  // already-existing ingredients of the same name. Also guards against React 18/19
+  // StrictMode's dev-mode double-invocation of effects, which would otherwise double-add
+  // (and double-create) the imported ingredients.
+  const hasAutoImported = useRef(false)
+  useEffect(() => {
+    if (initialBulkPasteText && !hasAutoImported.current && !isLoadingIngredients) {
+      hasAutoImported.current = true
+      void handleBulkAdd(initialBulkPasteText)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoadingIngredients])
 
   return (
     <Stack>

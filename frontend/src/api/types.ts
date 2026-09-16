@@ -168,6 +168,15 @@ export interface RecipeRequest {
   tags: string[]
 }
 
+export interface ImportedRecipe {
+  name: string
+  sourceUrl: string
+  servings: number | null
+  ingredientLines: string[]
+  instructionLines: string[]
+  tags: string[]
+}
+
 export interface RecipeSummary {
   id: number
   name: string

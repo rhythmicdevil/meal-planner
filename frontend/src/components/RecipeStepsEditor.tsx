@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button, Group, Stack, TextInput } from '@mantine/core'
 import type { UseFormReturnType } from '@mantine/form'
 import type { RecipeFormValues } from '../types/recipeForm'
@@ -6,6 +6,7 @@ import { BulkPasteModal } from './BulkPasteModal'
 
 interface Props {
   form: UseFormReturnType<RecipeFormValues>
+  initialBulkPasteText?: string
 }
 
 function parseSteps(text: string): string[] {
@@ -15,13 +16,24 @@ function parseSteps(text: string): string[] {
     .filter((line) => line.length > 0)
 }
 
-export function RecipeStepsEditor({ form }: Props) {
+export function RecipeStepsEditor({ form, initialBulkPasteText }: Props) {
   const [pasteOpen, setPasteOpen] = useState(false)
 
   const handleBulkAdd = (text: string) => {
     const parsed = parseSteps(text)
     form.setFieldValue('steps', [...form.values.steps, ...parsed])
   }
+
+  // Guards against React 18/19 StrictMode's dev-mode double-invocation of mount effects,
+  // which would otherwise double-add the imported steps.
+  const hasAutoImported = useRef(false)
+  useEffect(() => {
+    if (initialBulkPasteText && !hasAutoImported.current) {
+      hasAutoImported.current = true
+      handleBulkAdd(initialBulkPasteText)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <Stack>

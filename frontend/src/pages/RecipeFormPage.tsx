@@ -1,11 +1,11 @@
 import { useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Button, Group, LoadingOverlay, NumberInput, Stack, TagsInput, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { ApiRequestError } from '../api/client'
 import { useCreateRecipe, useRecipe, useUpdateRecipe } from '../api/recipes'
-import type { RecipeRequest } from '../api/types'
+import type { ImportedRecipe, RecipeRequest } from '../api/types'
 import { RecipeIngredientsEditor } from '../components/RecipeIngredientsEditor'
 import { RecipeStepsEditor } from '../components/RecipeStepsEditor'
 import { emptyRecipeFormValues, type RecipeFormValues } from '../types/recipeForm'
@@ -14,6 +14,8 @@ export function RecipeFormPage() {
   const { id } = useParams<{ id: string }>()
   const isEdit = id !== undefined
   const navigate = useNavigate()
+  const location = useLocation()
+  const imported = (location.state as { imported?: ImportedRecipe } | null)?.imported
 
   const { data: existing, isLoading: isLoadingExisting } = useRecipe(id)
   const createRecipe = useCreateRecipe()
@@ -54,6 +56,17 @@ export function RecipeFormPage() {
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existing])
+
+  useEffect(() => {
+    if (isEdit || !imported) return
+    form.setValues({
+      name: imported.name,
+      sourceUrl: imported.sourceUrl,
+      servings: imported.servings ?? '',
+      tags: imported.tags,
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const isSaving = createRecipe.isPending || updateRecipe.isPending
 
@@ -109,10 +122,10 @@ export function RecipeFormPage() {
           <TagsInput label="Tags" placeholder="Add a tag and press Enter" {...form.getInputProps('tags')} />
 
           <Title order={4}>Ingredients</Title>
-          <RecipeIngredientsEditor form={form} />
+          <RecipeIngredientsEditor form={form} initialBulkPasteText={imported?.ingredientLines.join('\n')} />
 
           <Title order={4}>Steps</Title>
-          <RecipeStepsEditor form={form} />
+          <RecipeStepsEditor form={form} initialBulkPasteText={imported?.instructionLines.join('\n')} />
 
           <Group justify="flex-end">
             <Button variant="default" type="button" onClick={() => navigate(-1)}>

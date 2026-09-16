@@ -9,9 +9,14 @@ export function RecipeListPage() {
     <Stack p="md">
       <Group justify="space-between">
         <Title order={2}>Recipes</Title>
-        <Button component={Link} to="/recipes/new">
-          New Recipe
-        </Button>
+        <Group gap="xs">
+          <Button variant="default" component={Link} to="/recipes/import">
+            Import from URL
+          </Button>
+          <Button component={Link} to="/recipes/new">
+            New Recipe
+          </Button>
+        </Group>
       </Group>
 
       {isLoading && <Loader />}
