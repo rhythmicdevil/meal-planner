@@ -70,6 +70,20 @@ describe('parseIngredientLine', () => {
     ])
   })
 
+  it('parses a plain ASCII-slash fraction amount', () => {
+    expect(parseIngredientLine('1/3 cup cream cheese', [])).toMatchObject([
+      { amount: 1 / 3, unit: 'cup', name: 'cream cheese' },
+    ])
+  })
+
+  it('treats a Unicode FRACTION SLASH the same as a plain "/", including a stray space around it', () => {
+    // Some sites' extracted ingredient text puts a space around U+2044 ("⁄") where a plain
+    // "/" would have none -- e.g. "1 ⁄3 Cup Cream Cheese" instead of "1/3 Cup Cream Cheese".
+    expect(parseIngredientLine('1 ⁄3 Cup Cream Cheese', [])).toMatchObject([
+      { amount: 1 / 3, unit: 'Cup', name: 'Cream Cheese', notes: '' },
+    ])
+  })
+
   it('treats a bare line with no leading amount as the ingredient name, not empty notes', () => {
     expect(parseIngredientLine('a pinch of magic', [])).toMatchObject([
       { amount: null, unit: '', name: 'a pinch of magic', notes: '', matchedIngredientId: null },
@@ -82,6 +96,12 @@ describe('parseIngredientLine', () => {
     ])
     expect(parseIngredientLine('Avocado oil spray', [])).toMatchObject([
       { amount: null, unit: '', name: 'Avocado oil spray', notes: '', matchedIngredientId: null },
+    ])
+  })
+
+  it('does not split a no-amount line into fake ingredients on plain commas without "and"', () => {
+    expect(parseIngredientLine('Cooked rice, for serving, optional', [])).toMatchObject([
+      { amount: null, unit: '', name: 'rice', notes: 'Cooked, for serving, optional' },
     ])
   })
 

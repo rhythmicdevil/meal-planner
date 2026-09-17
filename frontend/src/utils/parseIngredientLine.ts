@@ -126,11 +126,18 @@ const KNOWN_UNITS = new Set([
   'sprigs',
 ])
 
+// Some recipe sites mark up a fraction like "1/3" using the Unicode FRACTION SLASH (U+2044,
+// "⁄") instead of a plain "/", with each glyph in its own element -- when that gets flattened
+// to plain text (by our import fetch or the site's own JSON-LD), it comes through as "1 ⁄3"
+// with a stray space instead of "1/3". Accepting either slash character, with optional
+// whitespace around it, keeps that from being misread as a whole "1" plus a junk "⁄3" name.
+const SLASH = '[/⁄]'
+
 function parseLeadingAmount(text: string): { amount: number; rest: string } | null {
   const trimmed = text.trimStart()
 
-  // Mixed number with a plain fraction: "1 1/2 cups"
-  let match = trimmed.match(/^(\d+)\s+(\d+)\/(\d+)\s*(.*)$/)
+  // Mixed number with a plain fraction: "1 1/2 cups" (also "1 1⁄2 cups", "1 1 ⁄ 2 cups")
+  let match = trimmed.match(new RegExp(`^(\\d+)\\s+(\\d+)\\s*${SLASH}\\s*(\\d+)\\s*(.*)$`))
   if (match) {
     const [, whole, num, den, rest] = match
     return { amount: Number(whole) + Number(num) / Number(den), rest }
@@ -144,8 +151,8 @@ function parseLeadingAmount(text: string): { amount: number; rest: string } | nu
     return { amount: Number(whole) + VULGAR_FRACTIONS[frac], rest }
   }
 
-  // Plain fraction: "1/2 cup"
-  match = trimmed.match(/^(\d+)\/(\d+)\s*(.*)$/)
+  // Plain fraction: "1/2 cup" (also "1⁄2 cup", "1 ⁄2 cup")
+  match = trimmed.match(new RegExp(`^(\\d+)\\s*${SLASH}\\s*(\\d+)\\s*(.*)$`))
   if (match) {
     const [, num, den, rest] = match
     return { amount: Number(num) / Number(den), rest }
@@ -287,6 +294,15 @@ function splitCombinedIngredients(text: string): { names: string[]; notes: strin
   const withoutToTaste = toTasteMatch ? toTasteMatch[1].trim() : text
   const notes = toTasteMatch ? 'to taste' : ''
 
+  // Only treat this as an actual ingredient list if "and" shows up somewhere -- a bare
+  // comma (e.g. "Cooked rice, for serving, optional") is descriptive punctuation on ONE
+  // ingredient, not a list separator, and splitting on it would fabricate fake ingredients
+  // out of what's really just notes. "and" is what distinguishes a real list ("flour,
+  // sugar, and salt") from plain asides.
+  if (!/\band\b/i.test(withoutToTaste)) {
+    return { names: [withoutToTaste], notes }
+  }
+
   const names = withoutToTaste
     .split(/\s*,\s*(?:and\s+)?|\s+and\s+/i)
     .map((part) => part.trim())
@@ -338,14 +354,22 @@ export function parseIngredientLine(line: string, catalog: Ingredient[]): Parsed
 
   if (!leading) {
     // No leading amount at all -- could be a combined/"to taste" line ("salt and pepper"),
-    // or just a bare ingredient name with no quantity ("salt", "Avocado oil spray"). Either
-    // way, splitCombinedIngredients always returns at least one name (the whole line, if it
-    // found nothing to split on), so that's always what becomes this row's name -- leaving
-    // the name empty here would produce an unselected ingredient row that silently fails
-    // the "select an ingredient" validation on submit.
+    // or just a bare ingredient name with no quantity ("salt", "Avocado oil spray"), possibly
+    // with its own comma-separated notes ("Cooked rice, for serving, optional"). Either way,
+    // splitCombinedIngredients always returns at least one name (the whole line, if it found
+    // nothing to split on) -- leaving the name empty here would produce an unselected
+    // ingredient row that silently fails the "select an ingredient" validation on submit.
     const combined = splitCombinedIngredients(raw)
+    const isCombinedList = combined.names.length > 1
+
     return combined.names.map((rawName) => {
-      const stripped = stripTrailingParenthetical(rawName, combined.notes)
+      // A genuine multi-ingredient split ("salt" / "pepper") has no notes of its own beyond
+      // the shared "to taste" -- only a single, unsplit line can still have its own trailing
+      // comma-separated notes to pull out, same as the has-leading-amount path below does.
+      const { name: splitName, notes: ownNotes } = isCombinedList
+        ? { name: rawName, notes: '' }
+        : splitNameAndNotes(rawName)
+      const stripped = stripTrailingParenthetical(splitName, mergeNotes([ownNotes, combined.notes]))
       const { name, cutType, notes } = extractCutTypeAndClean(stripped.name, stripped.notes)
       return {
         raw,

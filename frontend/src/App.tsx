@@ -1,5 +1,7 @@
 import { Link, Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell, Button, Group, Title } from '@mantine/core'
+import { IngredientFormPage } from './pages/IngredientFormPage'
+import { IngredientListPage } from './pages/IngredientListPage'
 import { MealPlanDetailPage } from './pages/MealPlanDetailPage'
 import { MealPlanFormPage } from './pages/MealPlanFormPage'
 import { MealPlanListPage } from './pages/MealPlanListPage'
@@ -29,6 +31,9 @@ function App() {
             <Button variant="subtle" component={Link} to="/meal-plans">
               Meal Plans
             </Button>
+            <Button variant="subtle" component={Link} to="/ingredients">
+              Ingredients
+            </Button>
           </Group>
         </Group>
       </AppShell.Header>
@@ -50,6 +55,9 @@ function App() {
           <Route path="/meal-plans/:id/edit" element={<MealPlanFormPage />} />
           <Route path="/meal-plans/:id/shopping-list" element={<ShoppingListPage />} />
           <Route path="/meal-plans/:id/prep-list" element={<PrepListPage />} />
+          <Route path="/ingredients" element={<IngredientListPage />} />
+          <Route path="/ingredients/new" element={<IngredientFormPage />} />
+          <Route path="/ingredients/:id/edit" element={<IngredientFormPage />} />
         </Routes>
       </AppShell.Main>
     </AppShell>

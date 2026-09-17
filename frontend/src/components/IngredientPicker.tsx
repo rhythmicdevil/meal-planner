@@ -60,9 +60,14 @@ export function IngredientPicker({ value, onChange, error }: IngredientPickerPro
           error={error}
           nothingFoundMessage="No ingredients found"
         />
-        <Button variant="light" onClick={() => setModalOpen(true)} type="button">
-          + New
-        </Button>
+        {/* Once a row has an ingredient selected -- whether from a catalog match, a paste's
+            auto-create, or a previously-saved recipe -- there's nothing left for quick-add
+            to resolve; it only reappears if the selection is cleared back to empty. */}
+        {value === null && (
+          <Button variant="light" onClick={() => setModalOpen(true)} type="button">
+            + New
+          </Button>
+        )}
       </Group>
 
       <Modal opened={modalOpen} onClose={() => setModalOpen(false)} title="Add ingredient">

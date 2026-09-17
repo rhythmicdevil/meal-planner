@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClient;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
@@ -79,6 +80,14 @@ public class UrlImportAdapter implements RecipeImportAdapter {
     private String fetch(URI uri) {
         try {
             return restClient.get().uri(uri).retrieve().body(String.class);
+        } catch (HttpStatusCodeException e) {
+            // Deliberately don't include e.getMessage() here -- for a non-2xx response it embeds the
+            // raw response body (often a large HTML error/challenge page), which would otherwise leak
+            // verbatim into the user-facing import error notification.
+            throw new RecipeImportException(
+                    "Could not fetch " + uri + ": the site returned " + e.getStatusCode().value()
+                            + " " + e.getStatusText() + ". It may be blocking automated requests.",
+                    e);
         } catch (Exception e) {
             throw new RecipeImportException("Could not fetch " + uri + ": " + e.getMessage(), e);
         }
