@@ -64,6 +64,15 @@ describe('parseIngredientLine', () => {
     ])
   })
 
+  it('takes the upper bound of an en/em-dash-separated amount range too', () => {
+    expect(parseIngredientLine('2 – 3 tablespoons lemon juice', [])).toMatchObject([
+      { amount: 3, unit: 'tbsp', name: 'lemon juice', notes: '' },
+    ])
+    expect(parseIngredientLine('2—3 cloves garlic', [])).toMatchObject([
+      { amount: 3, unit: 'cloves', name: 'garlic', notes: '' },
+    ])
+  })
+
   it('strips chained leading prep-qualifiers ("rinsed and drained canned") into notes', () => {
     expect(parseIngredientLine('1 cup rinsed and drained canned black beans', [])).toMatchObject([
       { amount: 1, unit: 'cup', name: 'black beans', cutType: null, notes: 'rinsed, drained, canned' },

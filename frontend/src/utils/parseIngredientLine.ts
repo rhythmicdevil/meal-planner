@@ -249,11 +249,11 @@ function parseLeadingAmount(text: string): { amount: number; rest: string } | nu
     return { amount: VULGAR_FRACTIONS[frac], rest }
   }
 
-  // Amount range ("14 to 15 ounces", "2-3 cloves") -- take the upper bound, favoring
-  // having enough over running short (checked before the plain integer case below,
-  // which would otherwise grab just the first number and leave "to 15 ounces..." as
-  // unparseable junk).
-  match = trimmed.match(/^(\d+(?:\.\d+)?)\s*(?:to|-)\s*(\d+(?:\.\d+)?)\s*(.*)$/)
+  // Amount range ("14 to 15 ounces", "2-3 cloves", "2 – 3 tablespoons" with a typeset
+  // en/em dash) -- take the upper bound, favoring having enough over running short
+  // (checked before the plain integer case below, which would otherwise grab just the
+  // first number and leave "– 3 ounces..." as unparseable junk stuck in the name).
+  match = trimmed.match(/^(\d+(?:\.\d+)?)\s*(?:to|-|–|—)\s*(\d+(?:\.\d+)?)\s*(.*)$/)
   if (match) {
     const [, , upper, rest] = match
     return { amount: Number(upper), rest }
