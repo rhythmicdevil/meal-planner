@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router-dom'
-import { Alert, Anchor, Group, List, Loader, Stack, Text, Title } from '@mantine/core'
+import { Alert, Anchor, Button, Group, List, Loader, Stack, Text, Title } from '@mantine/core'
 import { useMealPlan, useShoppingList } from '../api/mealPlans'
 import { INGREDIENT_CATEGORY_LABELS, type IngredientCategory, type ShoppingListItem } from '../api/types'
 
@@ -27,7 +27,7 @@ export function ShoppingListPage() {
   if (isError || !shoppingList) return <Alert color="red" m="md">Could not load shopping list.</Alert>
 
   return (
-    <Stack maw={600} mx="auto" p="md">
+    <Stack maw={900} mx="auto" p="md">
       <Group justify="space-between" align="flex-start">
         <div>
           <Title order={2}>Shopping List</Title>
@@ -40,14 +40,17 @@ export function ShoppingListPage() {
             </Text>
           )}
         </div>
+        <Button className="no-print" variant="default" onClick={() => window.print()}>
+          Print
+        </Button>
       </Group>
 
       {shoppingList.items.length === 0 ? (
         <Text c="dimmed">Nothing to buy — no raw ingredients in this meal plan.</Text>
       ) : (
-        <Stack gap="lg">
+        <div className="shopping-list-columns">
           {[...groupByCategory(shoppingList.items)].map(([category, items]) => (
-            <div key={category}>
+            <div key={category} style={{ breakInside: 'avoid', marginBottom: 'var(--mantine-spacing-lg)' }}>
               <Title order={4} mb="xs">
                 {INGREDIENT_CATEGORY_LABELS[category]}
               </Title>
@@ -75,7 +78,7 @@ export function ShoppingListPage() {
               </List>
             </div>
           ))}
-        </Stack>
+        </div>
       )}
     </Stack>
   )

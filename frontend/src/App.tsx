@@ -18,9 +18,9 @@ import { ShoppingListPage } from './pages/ShoppingListPage'
 
 function App() {
   return (
-    <AppShell header={{ height: 56 }} padding="md">
-      <AppShell.Header>
-        <Group h="100%" px="md" justify="space-between">
+    <AppShell header={{ height: { base: 140, sm: 56 } }} padding="md">
+      <AppShell.Header className="no-print">
+        <Group h="100%" px="md" justify="space-between" className="app-header-inner">
           <Title order={3}>Meal Planner</Title>
           <Group gap="xs">
             <Button variant="subtle" component={Link} to="/recipes">

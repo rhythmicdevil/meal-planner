@@ -7,3 +7,35 @@ body,
 body {
   margin: 0;
 }
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* Below the AppShell's "sm" breakpoint the nav buttons can wrap onto a second line --
+   stacking the title above the nav (instead of sharing one row) gives the nav the full
+   width to lay out in, so wrapping is short and predictable. The AppShell header height
+   is configured responsively to match (see App.tsx) so page content doesn't start
+   underneath the taller mobile header. */
+@media screen and (max-width: 768px) {
+  .app-header-inner {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    padding-block: 8px;
+  }
+}
+
+.shopping-list-columns {
+  column-count: 2;
+  column-gap: 2rem;
+}
+
+@media screen and (max-width: 700px) {
+  .shopping-list-columns {
+    column-count: 1;
+  }
+}
