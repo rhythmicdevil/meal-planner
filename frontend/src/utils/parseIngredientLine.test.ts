@@ -12,13 +12,13 @@ const catalog: Ingredient[] = [
 describe('parseIngredientLine', () => {
   it('parses a plain amount + known unit + name', () => {
     expect(parseIngredientLine('4 cups cherry tomatoes', [])).toMatchObject([
-      { amount: 4, unit: 'cups', name: 'cherry tomatoes', notes: '' },
+      { amount: 4, unit: 'cup', name: 'cherry tomatoes', notes: '' },
     ])
   })
 
   it('parses a unicode fraction amount', () => {
     expect(parseIngredientLine('½ teaspoon salt', [])).toMatchObject([
-      { amount: 0.5, unit: 'teaspoon', name: 'salt', notes: '' },
+      { amount: 0.5, unit: 'tsp', name: 'salt', notes: '' },
     ])
   })
 
@@ -54,7 +54,7 @@ describe('parseIngredientLine', () => {
 
   it('takes the upper bound of a word-separated amount range', () => {
     expect(parseIngredientLine('14 to 15 ounces firm tofu', [])).toMatchObject([
-      { amount: 15, unit: 'ounces', name: 'firm tofu', notes: '' },
+      { amount: 15, unit: 'oz', name: 'firm tofu', notes: '' },
     ])
   })
 
@@ -78,7 +78,7 @@ describe('parseIngredientLine', () => {
 
   it('does the same for a "N-unit can" package size, keeping other trailing notes too', () => {
     expect(parseIngredientLine('1 15-ounce can chickpeas, rinsed', [])).toMatchObject([
-      { amount: 15, unit: 'ounce', name: 'chickpeas', notes: 'can, rinsed' },
+      { amount: 15, unit: 'oz', name: 'chickpeas', notes: 'can, rinsed' },
     ])
   })
 
@@ -141,7 +141,7 @@ describe('parseIngredientLine', () => {
 
   it('recognizes "c" as an abbreviation for cup, and "stalk(s)" as a unit', () => {
     expect(parseIngredientLine('1/2 c. flat-leaf parsley, chopped', [])).toMatchObject([
-      { amount: 0.5, unit: 'c', name: 'flat-leaf parsley', cutType: 'CHOPPED' },
+      { amount: 0.5, unit: 'cup', name: 'flat-leaf parsley', cutType: 'CHOPPED' },
     ])
     expect(parseIngredientLine('4 stalks celery', [])).toMatchObject([
       { amount: 4, unit: 'stalks', name: 'celery' },
@@ -179,6 +179,36 @@ describe('parseIngredientLine', () => {
     ])
   })
 
+  it('normalizes full unit words to their standard shorthand', () => {
+    expect(parseIngredientLine('2 tablespoons olive oil', [])).toMatchObject([{ amount: 2, unit: 'tbsp' }])
+    expect(parseIngredientLine('1 tablespoon olive oil', [])).toMatchObject([{ amount: 1, unit: 'tbsp' }])
+    expect(parseIngredientLine('3 teaspoons salt', [])).toMatchObject([{ amount: 3, unit: 'tsp' }])
+    expect(parseIngredientLine('8 ounces cream cheese', [])).toMatchObject([{ amount: 8, unit: 'oz' }])
+    expect(parseIngredientLine('2 pounds ground beef', [])).toMatchObject([{ amount: 2, unit: 'lb' }])
+    expect(parseIngredientLine('3 lbs chicken', [])).toMatchObject([{ amount: 3, unit: 'lb' }])
+    expect(parseIngredientLine('500 grams flour', [])).toMatchObject([{ amount: 500, unit: 'g' }])
+    expect(parseIngredientLine('2 kilograms flour', [])).toMatchObject([{ amount: 2, unit: 'kg' }])
+    expect(parseIngredientLine('250 milliliters milk', [])).toMatchObject([{ amount: 250, unit: 'ml' }])
+    expect(parseIngredientLine('2 liters water', [])).toMatchObject([{ amount: 2, unit: 'l' }])
+    expect(parseIngredientLine('1 quart stock', [])).toMatchObject([{ amount: 1, unit: 'qt' }])
+    expect(parseIngredientLine('2 pints cream', [])).toMatchObject([{ amount: 2, unit: 'pt' }])
+    expect(parseIngredientLine('1 gallon milk', [])).toMatchObject([{ amount: 1, unit: 'gal' }])
+    expect(parseIngredientLine('2 cups flour', [])).toMatchObject([{ amount: 2, unit: 'cup' }])
+    expect(parseIngredientLine('1 cup flour', [])).toMatchObject([{ amount: 1, unit: 'cup' }])
+  })
+
+  it('leaves already-abbreviated units and non-measurement count nouns untouched', () => {
+    expect(parseIngredientLine('2 tbsp olive oil', [])).toMatchObject([{ amount: 2, unit: 'tbsp' }])
+    expect(parseIngredientLine('8 oz cream cheese', [])).toMatchObject([{ amount: 8, unit: 'oz' }])
+    expect(parseIngredientLine('4 cloves garlic', [])).toMatchObject([{ amount: 4, unit: 'cloves' }])
+    expect(parseIngredientLine('2 sticks butter', [])).toMatchObject([{ amount: 2, unit: 'sticks' }])
+  })
+
+  it('normalizes a full unit word in a fused package-size line too', () => {
+    expect(parseIngredientLine('1 15-ounce can chickpeas', [])).toMatchObject([{ amount: 15, unit: 'oz' }])
+    expect(parseIngredientLine('1 2-pound bag frozen peas', [])).toMatchObject([{ amount: 2, unit: 'lb' }])
+  })
+
   it('normalizes the unit to lowercase regardless of source capitalization', () => {
     expect(parseIngredientLine('2 Tbsp unsalted butter', [])).toMatchObject([
       { amount: 2, unit: 'tbsp', name: 'unsalted butter' },
@@ -194,7 +224,7 @@ describe('parseIngredientLine', () => {
 
   it('parses a mixed unicode fraction amount', () => {
     expect(parseIngredientLine('1½ cups arborio rice', [])).toMatchObject([
-      { amount: 1.5, unit: 'cups', name: 'arborio rice' },
+      { amount: 1.5, unit: 'cup', name: 'arborio rice' },
     ])
   })
 

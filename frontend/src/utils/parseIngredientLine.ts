@@ -169,6 +169,46 @@ const KNOWN_UNITS = new Set([
   'stalks',
 ])
 
+// Canonical shorthand for units that have a standard abbreviation -- e.g. "tablespoon(s)"
+// always becomes "tbsp", "ounce(s)" always becomes "oz", matching how recipe sites and
+// grocery lists conventionally abbreviate these. Count-nouns without a real abbreviation
+// (clove, can, pinch, slice, stick, bunch, head, sprig, stalk, each) are left as typed --
+// only actual units of weight/volume are covered here. Plural forms fold into the same
+// singular abbreviation ("cups"/"c" -> "cup", "pounds"/"lbs" -> "lb") since an abbreviation
+// doesn't conventionally pluralize.
+const UNIT_ABBREVIATIONS: Record<string, string> = {
+  cup: 'cup',
+  cups: 'cup',
+  c: 'cup',
+  tablespoon: 'tbsp',
+  tablespoons: 'tbsp',
+  teaspoon: 'tsp',
+  teaspoons: 'tsp',
+  ounce: 'oz',
+  ounces: 'oz',
+  pound: 'lb',
+  pounds: 'lb',
+  lbs: 'lb',
+  gram: 'g',
+  grams: 'g',
+  kilogram: 'kg',
+  kilograms: 'kg',
+  milliliter: 'ml',
+  milliliters: 'ml',
+  liter: 'l',
+  liters: 'l',
+  quart: 'qt',
+  quarts: 'qt',
+  pint: 'pt',
+  pints: 'pt',
+  gallon: 'gal',
+  gallons: 'gal',
+}
+
+function normalizeUnit(unit: string): string {
+  return UNIT_ABBREVIATIONS[unit] ?? unit
+}
+
 // Some recipe sites mark up a fraction like "1/3" using the Unicode FRACTION SLASH (U+2044,
 // "⁄") instead of a plain "/", with each glyph in its own element -- when that gets flattened
 // to plain text (by our import fetch or the site's own JSON-LD), it comes through as "1 ⁄3"
@@ -237,7 +277,7 @@ function parseUnitAndRemainder(rest: string): { unit: string; remainder: string 
 
   if (firstWord && KNOWN_UNITS.has(normalized)) {
     const remainder = firstSpace === -1 ? '' : trimmed.slice(firstSpace + 1).trim()
-    return { unit: normalized, remainder }
+    return { unit: normalizeUnit(normalized), remainder }
   }
 
   return { unit: '', remainder: trimmed }
@@ -256,7 +296,7 @@ function extractPackageSize(rest: string): { amount: number; unit: string; note:
   const [, amountText, unitWord, containerWord, remainder] = match
   if (!KNOWN_UNITS.has(unitWord.toLowerCase())) return null
   if (!CONTAINER_NOUNS.has(containerWord.toLowerCase().replace(/[.,]$/, ''))) return null
-  return { amount: Number(amountText), unit: unitWord.toLowerCase(), note: containerWord, remainder }
+  return { amount: Number(amountText), unit: normalizeUnit(unitWord.toLowerCase()), note: containerWord, remainder }
 }
 
 // Splits on the first comma that's outside any parentheses -- e.g. "sun-dried tomatoes
