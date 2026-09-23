@@ -24,6 +24,12 @@ const CUT_TYPE_MODIFIERS = new Set([
 
 const SIZE_DESCRIPTORS = new Set(['large', 'small', 'medium', 'jumbo'])
 
+// Intensifiers that can precede a size descriptor ("very small onion", "extra large egg") --
+// kept from the ingredient name as one leftover phrase (see stripLeadingDescriptors) rather
+// than as two separate note fragments, since "very"/"extra" alone means nothing without the
+// size word next to it.
+const SIZE_INTENSIFIERS = new Set(['very', 'extra', 'super'])
+
 // Prep-state words that describe how the ingredient was bought/prepped, not what it is --
 // e.g. "rinsed and drained canned black beans" should name the ingredient "black beans",
 // not carry the prep instructions in the catalog name. Chained with "and"/commas below.
@@ -49,6 +55,40 @@ const PREP_QUALIFIER_WORDS = new Set([
   'frozen',
   'dried',
   'cooked',
+  'fresh',
+  'ground',
+  'crumbled',
+  'cracked',
+])
+
+// Words that look like a CUT_TYPE_KEYWORDS match ("whole") but are actually part of a
+// compound ingredient name ("whole wheat", "whole milk"), not a prep description of the
+// noun that follows -- e.g. "whole wheat tortillas" must stay intact rather than becoming
+// name "wheat tortillas" with a fabricated cutType of WHOLE.
+const WHOLE_COMPOUND_EXCEPTIONS = new Set(['wheat', 'grain', 'grains', 'milk'])
+
+// Retail-package container words -- "package"/"can"/"box" aren't part of an ingredient's
+// identity (see extractPackageSize below), but the user may still want to know it came in
+// one, so it's folded into notes rather than dropped.
+const CONTAINER_NOUNS = new Set([
+  'package',
+  'packages',
+  'can',
+  'cans',
+  'box',
+  'boxes',
+  'bag',
+  'bags',
+  'block',
+  'blocks',
+  'jar',
+  'jars',
+  'container',
+  'containers',
+  'carton',
+  'cartons',
+  'bottle',
+  'bottles',
 ])
 
 const VULGAR_FRACTIONS: Record<string, number> = {
@@ -124,6 +164,9 @@ const KNOWN_UNITS = new Set([
   'heads',
   'sprig',
   'sprigs',
+  'c',
+  'stalk',
+  'stalks',
 ])
 
 // Some recipe sites mark up a fraction like "1/3" using the Unicode FRACTION SLASH (U+2044,
@@ -194,28 +237,115 @@ function parseUnitAndRemainder(rest: string): { unit: string; remainder: string 
 
   if (firstWord && KNOWN_UNITS.has(normalized)) {
     const remainder = firstSpace === -1 ? '' : trimmed.slice(firstSpace + 1).trim()
-    return { unit: firstWord.replace(/\.$/, ''), remainder }
+    return { unit: normalized, remainder }
   }
 
   return { unit: '', remainder: trimmed }
 }
 
+// Recognizes a retail package size fused right after a bare leading "1" -- e.g. "1 10-oz
+// package fresh cheese tortellini" (hyphenated) or "1 28 oz can whole tomatoes" (plain
+// space). The bare "1" is almost always just "one of these," so what actually matters for
+// the catalog/shopping list is the number+unit that follows; the container word
+// ("package"/"can") that follows *that* gets pulled out too, so it doesn't stay stuck in the
+// name (see stripLeadingDescriptors's leading-word stripping, which can't see across a
+// number token to find it).
+function extractPackageSize(rest: string): { amount: number; unit: string; note: string; remainder: string } | null {
+  const match = rest.match(/^(\d+(?:\.\d+)?)[-\s]+([a-zA-Z]+)\.?\s+(\S+)\s*(.*)$/)
+  if (!match) return null
+  const [, amountText, unitWord, containerWord, remainder] = match
+  if (!KNOWN_UNITS.has(unitWord.toLowerCase())) return null
+  if (!CONTAINER_NOUNS.has(containerWord.toLowerCase().replace(/[.,]$/, ''))) return null
+  return { amount: Number(amountText), unit: unitWord.toLowerCase(), note: containerWord, remainder }
+}
+
+// Splits on the first comma that's outside any parentheses -- e.g. "sun-dried tomatoes
+// (finely diced, packed in oil)" has its only comma *inside* the aside, so it must stay
+// there rather than being torn in half into name="...(finely diced" / notes="packed in oil)".
+// A depth-0 comma is a real name/notes boundary; a comma inside "(...)" never is (nested
+// parens aren't a real recipe-text case, but the depth counter costs nothing to keep general).
 function splitNameAndNotes(text: string): { name: string; notes: string } {
-  const commaIndex = text.indexOf(',')
-  if (commaIndex === -1) {
-    return { name: text.trim(), notes: '' }
+  let depth = 0
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i]
+    if (ch === '(') depth++
+    else if (ch === ')') depth = Math.max(0, depth - 1)
+    else if (ch === ',' && depth === 0) {
+      // The notes half can itself be one fully-parenthesized clause -- e.g. "large stalks
+      // celery, (sliced on a bias)" -- which should read as notes "sliced on a bias", not
+      // literally keep its own wrapping parens.
+      return { name: text.slice(0, i).trim(), notes: stripRedundantOuterParens(text.slice(i + 1).trim()) }
+    }
   }
-  return { name: text.slice(0, commaIndex).trim(), notes: text.slice(commaIndex + 1).trim() }
+  return { name: text.trim(), notes: '' }
+}
+
+// If the whole string is wrapped in one fully-redundant extra pair of parens -- e.g. a
+// doubly-wrapped "((cooked according to package instructions))" -- collapses it down to the
+// bare content. Only strips a pair when its open paren's *matching* close is the very last
+// character (repeating for multiple redundant layers); "shredded (See Note 1)" doesn't
+// qualify, since its leading "s" isn't a "(", so a genuine nested annotation like that is
+// left alone rather than being torn open.
+function stripRedundantOuterParens(text: string): string {
+  let result = text.trim()
+  while (result.startsWith('(') && result.endsWith(')')) {
+    let depth = 0
+    let closesEarly = false
+    for (let i = 0; i < result.length - 1; i++) {
+      if (result[i] === '(') depth++
+      else if (result[i] === ')' && --depth === 0) {
+        closesEarly = true
+        break
+      }
+    }
+    if (closesEarly) break
+    result = result.slice(1, -1).trim()
+  }
+  return result
 }
 
 // Pulls a trailing parenthetical aside (e.g. "romano cheese (or vegan equivalent)") out of
 // the name and into notes, so an auto-created ingredient's name stays a clean catalog entry.
+// Finds the *outermost* matching "(" for the final ")" by scanning backward and tracking
+// depth, so a nested annotation inside the aside -- "cheddar cheese (shredded (See Note 1))"
+// -- comes out whole ("shredded (See Note 1)") instead of the naive non-nesting-aware regex
+// this replaced stopping at the first ")" it saw and leaving a dangling "(See Note 1))" mess.
 function stripTrailingParenthetical(name: string, notes: string): { name: string; notes: string } {
-  const match = name.match(/^(.*?)\s*\(([^)]*)\)\s*$/)
-  if (!match) return { name, notes }
-  const [, base, aside] = match
-  if (!base.trim()) return { name, notes }
-  return { name: base.trim(), notes: [notes, aside.trim()].filter(Boolean).join('; ') }
+  const trimmed = name.trimEnd()
+  if (!trimmed.endsWith(')')) return { name, notes }
+
+  let depth = 0
+  let openIndex = -1
+  for (let i = trimmed.length - 1; i >= 0; i--) {
+    if (trimmed[i] === ')') depth++
+    else if (trimmed[i] === '(' && --depth === 0) {
+      openIndex = i
+      break
+    }
+  }
+  if (openIndex === -1) return { name, notes }
+
+  const base = trimmed.slice(0, openIndex).trim()
+  if (!base) return { name, notes }
+  const aside = stripRedundantOuterParens(trimmed.slice(openIndex + 1, -1))
+  return { name: base, notes: [notes, aside].filter(Boolean).join('; ') }
+}
+
+// Trailing purpose clauses ("for garnish", "to garnish", "for optional garnish", "for
+// serving", "to taste") describe how an ingredient is used, not what it is -- e.g. "sesame
+// seeds for optional garnish" should name the ingredient "sesame seeds", not carry the whole
+// clause into the catalog name. Deliberately a closed vocabulary rather than a bare
+// "for|to .+$" match, so it can't eat an ingredient name that legitimately ends in "for"/"to"
+// for an unrelated reason.
+const PURPOSE_CLAUSE_RE =
+  /\s+(?:for|to)\s+(?:optional\s+)?(?:garnish(?:ing)?|serving|topping|dipping|frying|cooking|drizzling|taste)\.?$/i
+
+function stripTrailingPurposeClause(name: string): { name: string; clause: string } {
+  const match = name.match(PURPOSE_CLAUSE_RE)
+  if (!match || match.index === undefined) return { name, clause: '' }
+  const base = name.slice(0, match.index).trim()
+  if (!base) return { name, clause: '' }
+  return { name: base, clause: match[0].trim() }
 }
 
 // Strips leading size descriptors ("large onion" -> "onion") and a leading cut-type
@@ -227,8 +357,19 @@ function stripLeadingDescriptors(name: string): { name: string; cutType: CutType
   const leftovers: string[] = []
   let cutType: CutType | null = null
 
-  while (words.length > 1 && SIZE_DESCRIPTORS.has(words[0].toLowerCase())) {
-    leftovers.push(words.shift()!)
+  while (words.length > 1) {
+    const first = words[0].toLowerCase()
+    if (SIZE_DESCRIPTORS.has(first)) {
+      leftovers.push(words.shift()!)
+      continue
+    }
+    if (SIZE_INTENSIFIERS.has(first) && words.length > 2 && SIZE_DESCRIPTORS.has(words[1].toLowerCase())) {
+      const intensifier = words.shift()!
+      const size = words.shift()!
+      leftovers.push(`${intensifier} ${size}`)
+      continue
+    }
+    break
   }
 
   while (words.length > 1) {
@@ -251,7 +392,7 @@ function stripLeadingDescriptors(name: string): { name: string; cutType: CutType
       leftovers.push(words[0])
       cutType = CUT_TYPE_KEYWORDS[second]
       words.splice(0, 2)
-    } else if (CUT_TYPE_KEYWORDS[first]) {
+    } else if (CUT_TYPE_KEYWORDS[first] && !(first === 'whole' && second && WHOLE_COMPOUND_EXCEPTIONS.has(second))) {
       cutType = CUT_TYPE_KEYWORDS[first]
       words.shift()
     }
@@ -285,6 +426,20 @@ function mergeNotes(parts: string[]): string {
   return parts.filter(Boolean).join(', ')
 }
 
+// Splits a comma/"and"-joined list of items into individual parts -- "salt and pepper" and
+// "oregano, crushed red pepper flakes, and smoked paprika" both become one entry per item.
+// Shared by splitCombinedIngredients (below) and the leading-"each" handling in
+// parseIngredientLine (a list following a shared amount/unit, e.g. "1 tsp each salt and
+// pepper"), which is safe to split unconditionally since "each" already signals a real list --
+// unlike splitCombinedIngredients's own bare-comma case, there's no risk of mistaking a
+// plain descriptive comma for a list separator here.
+function splitDelimitedList(text: string): string[] {
+  return text
+    .split(/\s*,\s*(?:and\s+)?|\s+and\s+/i)
+    .map((part) => part.trim())
+    .filter(Boolean)
+}
+
 // Recognizes lines like "salt and pepper to taste" or "kosher salt and freshly ground
 // black pepper, to taste" — a combined ingredient line with no numeric amount, since
 // "to taste" items rarely have one. Splits into separate ingredient names (our model
@@ -303,11 +458,7 @@ function splitCombinedIngredients(text: string): { names: string[]; notes: strin
     return { names: [withoutToTaste], notes }
   }
 
-  const names = withoutToTaste
-    .split(/\s*,\s*(?:and\s+)?|\s+and\s+/i)
-    .map((part) => part.trim())
-    .filter(Boolean)
-
+  const names = splitDelimitedList(withoutToTaste)
   return { names: names.length > 0 ? names : [withoutToTaste], notes }
 }
 
@@ -370,7 +521,11 @@ export function parseIngredientLine(line: string, catalog: Ingredient[]): Parsed
         ? { name: rawName, notes: '' }
         : splitNameAndNotes(rawName)
       const stripped = stripTrailingParenthetical(splitName, mergeNotes([ownNotes, combined.notes]))
-      const { name, cutType, notes } = extractCutTypeAndClean(stripped.name, stripped.notes)
+      const purposeStripped = stripTrailingPurposeClause(stripped.name)
+      const { name, cutType, notes } = extractCutTypeAndClean(
+        purposeStripped.name,
+        mergeNotes([stripped.notes, purposeStripped.clause]),
+      )
       return {
         raw,
         amount: null,
@@ -383,19 +538,60 @@ export function parseIngredientLine(line: string, catalog: Ingredient[]): Parsed
     })
   }
 
-  const { unit, remainder } = parseUnitAndRemainder(leading.rest)
+  // Only treat a fused "10-oz package" as a package size when the leading number is a bare
+  // "1" -- "1 10-oz package X" and "10-oz package X" both unambiguously mean "one 10oz
+  // package," but "3 10-oz packages X" would need actual multiplication (3 * 10oz) that
+  // there's no real-world example of yet, so it's left alone rather than guessed at.
+  const packageSize = leading.amount === 1 ? extractPackageSize(leading.rest) : null
+  const { unit, remainder } = packageSize
+    ? { unit: packageSize.unit, remainder: packageSize.remainder }
+    : parseUnitAndRemainder(leading.rest)
+  const amount = packageSize ? packageSize.amount : leading.amount
+
+  // "1 tsp each salt and pepper" / "1 tsp each oregano, crushed red pepper flakes, and
+  // smoked paprika" -- a real unit was already found above, and a *following* "each" marks
+  // a list of ingredients that all share this same amount/unit (our model has no way to
+  // represent that as one row, same reasoning as splitCombinedIngredients). This can't be
+  // confused with "each" used as a unit itself ("2 each onions") since that "each" gets
+  // consumed by parseUnitAndRemainder above and never reaches here as the remainder's start.
+  const eachMatch = remainder.match(/^each\s+(.+)$/i)
+  if (eachMatch) {
+    const names = splitDelimitedList(eachMatch[1])
+    return (names.length > 0 ? names : [eachMatch[1]]).map((rawName) => {
+      const stripped = stripTrailingParenthetical(rawName, '')
+      const purposeStripped = stripTrailingPurposeClause(stripped.name)
+      const { name, cutType, notes } = extractCutTypeAndClean(
+        purposeStripped.name,
+        mergeNotes([stripped.notes, purposeStripped.clause]),
+      )
+      return {
+        raw,
+        amount,
+        unit,
+        name,
+        cutType,
+        notes,
+        matchedIngredientId: matchCatalogIngredient(name, catalog),
+      }
+    })
+  }
+
   const split = splitNameAndNotes(remainder)
   const stripped = stripTrailingParenthetical(split.name, split.notes)
-  const { name, cutType, notes } = extractCutTypeAndClean(stripped.name, stripped.notes)
+  const purposeStripped = stripTrailingPurposeClause(stripped.name)
+  const { name, cutType, notes } = extractCutTypeAndClean(
+    purposeStripped.name,
+    mergeNotes([stripped.notes, purposeStripped.clause]),
+  )
 
   return [
     {
       raw,
-      amount: leading.amount,
+      amount,
       unit,
       name,
       cutType,
-      notes,
+      notes: packageSize ? mergeNotes([packageSize.note, notes]) : notes,
       matchedIngredientId: matchCatalogIngredient(name, catalog),
     },
   ]
