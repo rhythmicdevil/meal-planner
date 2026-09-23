@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button, Group, LoadingOverlay, MultiSelect, Stack, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
@@ -7,7 +7,9 @@ import { useRecipes } from '../api/recipes'
 import { ApiRequestError } from '../api/client'
 import { useCreateMenu, useMenu, useUpdateMenu } from '../api/menus'
 import type { MenuRequest } from '../api/types'
+import { RecipeSuggestions } from '../components/RecipeSuggestions'
 import { emptyMenuFormValues, type MenuFormValues } from '../types/menuForm'
+import { suggestRecipes } from '../utils/suggestRecipes'
 
 export function MenuFormPage() {
   const { id } = useParams<{ id: string }>()
@@ -37,6 +39,13 @@ export function MenuFormPage() {
   }, [existing])
 
   const isSaving = createMenu.isPending || updateMenu.isPending
+
+  const selectedRecipeIds = form.values.recipeIds.map(Number)
+  const suggestions = useMemo(
+    () => suggestRecipes(selectedRecipeIds, recipes),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [form.values.recipeIds, recipes],
+  )
 
   const handleSubmit = form.onSubmit(async (values) => {
     const request: MenuRequest = {
@@ -78,6 +87,11 @@ export function MenuFormPage() {
             searchable
             data={recipes.map((recipe) => ({ value: String(recipe.id), label: recipe.name }))}
             {...form.getInputProps('recipeIds')}
+          />
+
+          <RecipeSuggestions
+            suggestions={suggestions}
+            onAdd={(recipeId) => form.setFieldValue('recipeIds', [...form.values.recipeIds, String(recipeId)])}
           />
 
           <Group justify="flex-end">

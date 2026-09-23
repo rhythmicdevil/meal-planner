@@ -1,13 +1,18 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button, Group, LoadingOverlay, Stack, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { ApiRequestError } from '../api/client'
 import { useCreateMealPlan, useMealPlan, useUpdateMealPlan } from '../api/mealPlans'
+import { useMenus } from '../api/menus'
+import { useRecipes } from '../api/recipes'
 import type { MealPlanRequest } from '../api/types'
 import { MealPlanItemsEditor } from '../components/MealPlanItemsEditor'
+import { RecipeSuggestions } from '../components/RecipeSuggestions'
 import { emptyMealPlanFormValues, type MealPlanFormValues } from '../types/mealPlanForm'
+import { resolveMealPlanRecipeIds } from '../utils/resolveMealPlanRecipeIds'
+import { suggestRecipes } from '../utils/suggestRecipes'
 
 export function MealPlanFormPage() {
   const { id } = useParams<{ id: string }>()
@@ -15,6 +20,8 @@ export function MealPlanFormPage() {
   const navigate = useNavigate()
 
   const { data: existing, isLoading: isLoadingExisting } = useMealPlan(id)
+  const { data: recipes = [] } = useRecipes()
+  const { data: menus = [] } = useMenus()
   const createMealPlan = useCreateMealPlan()
   const updateMealPlan = useUpdateMealPlan(id ?? '')
 
@@ -42,6 +49,16 @@ export function MealPlanFormPage() {
   }, [existing])
 
   const isSaving = createMealPlan.isPending || updateMealPlan.isPending
+
+  const selectedRecipeIds = useMemo(
+    () => resolveMealPlanRecipeIds(form.values.items, menus),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [form.values.items, menus],
+  )
+  const suggestions = useMemo(
+    () => suggestRecipes(selectedRecipeIds, recipes),
+    [selectedRecipeIds, recipes],
+  )
 
   const handleSubmit = form.onSubmit(async (values) => {
     let hasItemErrors = false
@@ -103,6 +120,13 @@ export function MealPlanFormPage() {
 
           <Title order={4}>Items</Title>
           <MealPlanItemsEditor form={form} />
+
+          <RecipeSuggestions
+            suggestions={suggestions}
+            onAdd={(recipeId) =>
+              form.insertListItem('items', { itemType: 'RECIPE', recipeId: String(recipeId), menuId: null })
+            }
+          />
 
           <Group justify="flex-end">
             <Button variant="default" type="button" onClick={() => navigate(-1)}>
