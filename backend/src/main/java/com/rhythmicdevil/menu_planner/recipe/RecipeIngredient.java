@@ -78,10 +78,6 @@ public class RecipeIngredient {
         return ingredient;
     }
 
-    public void setIngredient(Ingredient ingredient) {
-        this.ingredient = ingredient;
-    }
-
     public BigDecimal getAmount() {
         return amount;
     }
