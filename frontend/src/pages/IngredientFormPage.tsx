@@ -1,10 +1,11 @@
 import { useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { Button, Group, LoadingOverlay, Select, Stack, TagsInput, TextInput, Title } from '@mantine/core'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Anchor, Button, Group, List, LoadingOverlay, Select, Stack, TagsInput, Text, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { ApiRequestError } from '../api/client'
 import { useCreateIngredient, useIngredient, useUpdateIngredient } from '../api/ingredients'
+import { useRecipes } from '../api/recipes'
 import { INGREDIENT_CATEGORIES, INGREDIENT_CATEGORY_LABELS, type IngredientRequest } from '../api/types'
 import { emptyIngredientFormValues, type IngredientFormValues } from '../types/ingredientForm'
 
@@ -14,8 +15,13 @@ export function IngredientFormPage() {
   const navigate = useNavigate()
 
   const { data: existing, isLoading: isLoadingExisting } = useIngredient(id)
+  const { data: recipes = [] } = useRecipes()
   const createIngredient = useCreateIngredient()
   const updateIngredient = useUpdateIngredient(id ?? '')
+
+  const usedInRecipes = isEdit
+    ? recipes.filter((recipe) => recipe.ingredients.some((ri) => ri.ingredientId === Number(id)))
+    : []
 
   const form = useForm<IngredientFormValues>({
     mode: 'controlled',
@@ -104,6 +110,25 @@ export function IngredientFormPage() {
           </Group>
         </Stack>
       </form>
+
+      {isEdit && (
+        <Stack gap="xs">
+          <Title order={4}>Used in</Title>
+          {usedInRecipes.length === 0 ? (
+            <Text c="dimmed">Not used in any recipes yet.</Text>
+          ) : (
+            <List>
+              {usedInRecipes.map((recipe) => (
+                <List.Item key={recipe.id}>
+                  <Anchor component={Link} to={`/recipes/${recipe.id}/edit`}>
+                    {recipe.name}
+                  </Anchor>
+                </List.Item>
+              ))}
+            </List>
+          )}
+        </Stack>
+      )}
     </Stack>
   )
 }
