@@ -50,6 +50,11 @@ public class BackupService {
                 "--single-transaction",
                 "--routines",
                 "--triggers",
+                // The app DB user is intentionally not granted the global PROCESS privilege
+                // (only needed for dumping tablespace metadata, which this app has none of
+                // worth backing up); without this flag mysqldump still succeeds but prints a
+                // spurious "Access denied ... PROCESS privilege" warning to stderr.
+                "--no-tablespaces",
                 database
         );
         // Stderr is drained concurrently on its own thread -- if mysqldump writes enough to
