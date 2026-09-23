@@ -71,8 +71,8 @@ export function RecipeIngredientsEditor({ form, initialBulkPasteText }: Props) {
           unit: parsed.unit,
           cutType: parsed.cutType,
           cutTypeOther: '',
-          stateCondition: null,
-          stateConditionOther: '',
+          stateCondition: parsed.stateCondition,
+          stateConditionOther: parsed.stateConditionOther ?? '',
           notes: parsed.notes,
         })
       }

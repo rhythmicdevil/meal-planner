@@ -1,4 +1,4 @@
-import type { CutType, Ingredient } from '../api/types'
+import type { CutType, Ingredient, StateCondition } from '../api/types'
 
 const CUT_TYPE_KEYWORDS: Record<string, CutType> = {
   chopped: 'CHOPPED',
@@ -167,6 +167,8 @@ const KNOWN_UNITS = new Set([
   'c',
   'stalk',
   'stalks',
+  'bulb',
+  'bulbs',
 ])
 
 // Canonical shorthand for units that have a standard abbreviation -- e.g. "tablespoon(s)"
@@ -397,6 +399,14 @@ function stripLeadingDescriptors(name: string): { name: string; cutType: CutType
   const leftovers: string[] = []
   let cutType: CutType | null = null
 
+  // A count unit is often followed by "of" ("1 clove of garlic", "1 bulb of garlic", "1
+  // head of lettuce") -- once the unit itself is consumed elsewhere, this filler word would
+  // otherwise be left stuck on the front of the name. Discarded outright rather than kept
+  // in notes, since "of" carries no information on its own.
+  while (words.length > 1 && words[0].toLowerCase() === 'of') {
+    words.shift()
+  }
+
   while (words.length > 1) {
     const first = words[0].toLowerCase()
     if (SIZE_DESCRIPTORS.has(first)) {
@@ -502,13 +512,24 @@ function splitCombinedIngredients(text: string): { names: string[]; notes: strin
   return { names: names.length > 0 ? names : [withoutToTaste], notes }
 }
 
+// Strips a common regular English plural ending so "carrots"/"carrot" and "tomatoes"/
+// "tomato" are recognized as the same word for catalog matching -- not a full pluralization
+// library (irregular plurals like "leaves" aren't handled), just the common cases, so bulk
+// paste doesn't keep recreating a duplicate catalog entry just because one recipe wrote the
+// singular and another wrote the plural.
+function singularize(word: string): string {
+  if (/(oes|shes|ches|xes)$/.test(word)) return word.slice(0, -2)
+  if (word.endsWith('s') && !word.endsWith('ss')) return word.slice(0, -1)
+  return word
+}
+
 function matchCatalogIngredient(name: string, catalog: Ingredient[]): number | null {
   const normalizedName = name.toLowerCase()
-  const matched = catalog.find(
-    (ingredient) =>
-      ingredient.name.toLowerCase() === normalizedName ||
-      ingredient.aliases.some((alias) => alias.toLowerCase() === normalizedName),
-  )
+  const singularName = singularize(normalizedName)
+  const matched = catalog.find((ingredient) => {
+    const candidateNames = [ingredient.name.toLowerCase(), ...ingredient.aliases.map((alias) => alias.toLowerCase())]
+    return candidateNames.some((candidate) => candidate === normalizedName || singularize(candidate) === singularName)
+  })
   return matched?.id ?? null
 }
 
@@ -519,19 +540,41 @@ export interface ParsedIngredientLine {
   name: string
   cutType: CutType | null
   notes: string
+  stateCondition: StateCondition | null
+  stateConditionOther: string | null
   matchedIngredientId: number | null
 }
 
 // Cleans a name/notes pair: strips leading size descriptors and a leading or trailing
 // cut-type phrase (checking the name's front and the notes' entirety), and folds
 // anything stripped that isn't the cut type itself (a modifier, a size word) into notes.
-function extractCutTypeAndClean(rawName: string, rawNotes: string): { name: string; cutType: CutType | null; notes: string } {
+// "Black pepper"/bare "pepper" is conventionally bought and used pre-ground -- the recipe
+// text essentially never bothers to say so. Defaults its stateCondition to OTHER/"ground"
+// without needing the source line to spell that out. Deliberately an *exact* match on the
+// whole name, not a substring check, so it can't misfire on "peppercorns" (a distinct
+// whole/unground ingredient) or a produce item like "bell pepper"/"jalapeño pepper".
+function defaultPepperState(name: string): { stateCondition: StateCondition | null; stateConditionOther: string | null } {
+  if (/^(black )?pepper$/i.test(name.trim())) {
+    return { stateCondition: 'OTHER', stateConditionOther: 'ground' }
+  }
+  return { stateCondition: null, stateConditionOther: null }
+}
+
+function extractCutTypeAndClean(
+  rawName: string,
+  rawNotes: string,
+): { name: string; cutType: CutType | null; notes: string; stateCondition: StateCondition | null; stateConditionOther: string | null } {
   const { name, cutType: prefixCutType, leftovers } = stripLeadingDescriptors(rawName)
   const { cutType: suffixCutType, leftover: suffixLeftover } = extractCutTypeFromNotes(rawNotes)
+  // Catalog ingredient names are always lowercase, regardless of how the source recipe
+  // capitalized them -- keeps auto-created entries consistent with the rest of the catalog
+  // instead of depending on each recipe site's own style.
+  const finalName = name.toLowerCase()
   return {
-    name,
+    name: finalName,
     cutType: prefixCutType ?? suffixCutType,
     notes: mergeNotes([...leftovers, suffixLeftover]),
+    ...defaultPepperState(finalName),
   }
 }
 
@@ -562,7 +605,7 @@ export function parseIngredientLine(line: string, catalog: Ingredient[]): Parsed
         : splitNameAndNotes(rawName)
       const stripped = stripTrailingParenthetical(splitName, mergeNotes([ownNotes, combined.notes]))
       const purposeStripped = stripTrailingPurposeClause(stripped.name)
-      const { name, cutType, notes } = extractCutTypeAndClean(
+      const { name, cutType, notes, stateCondition, stateConditionOther } = extractCutTypeAndClean(
         purposeStripped.name,
         mergeNotes([stripped.notes, purposeStripped.clause]),
       )
@@ -573,6 +616,8 @@ export function parseIngredientLine(line: string, catalog: Ingredient[]): Parsed
         name,
         cutType,
         notes,
+        stateCondition,
+        stateConditionOther,
         matchedIngredientId: matchCatalogIngredient(name, catalog),
       }
     })
@@ -600,7 +645,7 @@ export function parseIngredientLine(line: string, catalog: Ingredient[]): Parsed
     return (names.length > 0 ? names : [eachMatch[1]]).map((rawName) => {
       const stripped = stripTrailingParenthetical(rawName, '')
       const purposeStripped = stripTrailingPurposeClause(stripped.name)
-      const { name, cutType, notes } = extractCutTypeAndClean(
+      const { name, cutType, notes, stateCondition, stateConditionOther } = extractCutTypeAndClean(
         purposeStripped.name,
         mergeNotes([stripped.notes, purposeStripped.clause]),
       )
@@ -611,6 +656,8 @@ export function parseIngredientLine(line: string, catalog: Ingredient[]): Parsed
         name,
         cutType,
         notes,
+        stateCondition,
+        stateConditionOther,
         matchedIngredientId: matchCatalogIngredient(name, catalog),
       }
     })
@@ -619,7 +666,7 @@ export function parseIngredientLine(line: string, catalog: Ingredient[]): Parsed
   const split = splitNameAndNotes(remainder)
   const stripped = stripTrailingParenthetical(split.name, split.notes)
   const purposeStripped = stripTrailingPurposeClause(stripped.name)
-  const { name, cutType, notes } = extractCutTypeAndClean(
+  const { name, cutType, notes, stateCondition, stateConditionOther } = extractCutTypeAndClean(
     purposeStripped.name,
     mergeNotes([stripped.notes, purposeStripped.clause]),
   )
@@ -632,6 +679,8 @@ export function parseIngredientLine(line: string, catalog: Ingredient[]): Parsed
       name,
       cutType,
       notes: packageSize ? mergeNotes([packageSize.note, notes]) : notes,
+      stateCondition,
+      stateConditionOther,
       matchedIngredientId: matchCatalogIngredient(name, catalog),
     },
   ]

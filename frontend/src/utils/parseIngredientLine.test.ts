@@ -157,6 +157,17 @@ describe('parseIngredientLine', () => {
     ])
   })
 
+  it('recognizes "bulb(s)" as a unit', () => {
+    expect(parseIngredientLine('1 bulb garlic', [])).toMatchObject([{ amount: 1, unit: 'bulb', name: 'garlic' }])
+  })
+
+  it('drops a filler "of" left over after a count unit', () => {
+    expect(parseIngredientLine('1 bulb of garlic', [])).toMatchObject([{ amount: 1, unit: 'bulb', name: 'garlic' }])
+    expect(parseIngredientLine('1 clove of garlic', [])).toMatchObject([{ amount: 1, unit: 'clove', name: 'garlic' }])
+    expect(parseIngredientLine('1 head of lettuce', [])).toMatchObject([{ amount: 1, unit: 'head', name: 'lettuce' }])
+    expect(parseIngredientLine('6 oz of cream cheese', [])).toMatchObject([{ amount: 6, unit: 'oz', name: 'cream cheese' }])
+  })
+
   it('does not mistake "whole" in a compound noun ("whole wheat"/"whole milk") for a cut type', () => {
     expect(parseIngredientLine('6 whole wheat tortillas', [])).toMatchObject([
       { amount: 6, unit: '', name: 'whole wheat tortillas', cutType: null },
@@ -175,7 +186,7 @@ describe('parseIngredientLine', () => {
       { amount: null, unit: '', name: 'sesame seeds', notes: 'for optional garnish' },
     ])
     expect(parseIngredientLine('Sesame Seeds to Garnish', [])).toMatchObject([
-      { amount: null, unit: '', name: 'Sesame Seeds', notes: 'to Garnish' },
+      { amount: null, unit: '', name: 'sesame seeds', notes: 'to Garnish' },
     ])
     expect(parseIngredientLine('2 tbsp parsley for garnish', [])).toMatchObject([
       { amount: 2, unit: 'tbsp', name: 'parsley', notes: 'for garnish' },
@@ -225,6 +236,12 @@ describe('parseIngredientLine', () => {
     expect(parseIngredientLine('1 CUP flour', [])).toMatchObject([{ amount: 1, unit: 'cup', name: 'flour' }])
   })
 
+  it('normalizes the ingredient name to lowercase regardless of source capitalization', () => {
+    expect(parseIngredientLine('2 cups Sushi Rice', [])).toMatchObject([{ amount: 2, unit: 'cup', name: 'sushi rice' }])
+    expect(parseIngredientLine('1 Nori Sheet', [])).toMatchObject([{ amount: 1, unit: '', name: 'nori sheet' }])
+    expect(parseIngredientLine('KOSHER SALT', [])).toMatchObject([{ amount: null, unit: '', name: 'kosher salt' }])
+  })
+
   it('normalizes the unit to lowercase for a fused package-size line too', () => {
     expect(parseIngredientLine('1 15-OZ can chickpeas', [])).toMatchObject([
       { amount: 15, unit: 'oz', name: 'chickpeas' },
@@ -247,7 +264,7 @@ describe('parseIngredientLine', () => {
     // Some sites' extracted ingredient text puts a space around U+2044 ("⁄") where a plain
     // "/" would have none -- e.g. "1 ⁄3 Cup Cream Cheese" instead of "1/3 Cup Cream Cheese".
     expect(parseIngredientLine('1 ⁄3 Cup Cream Cheese', [])).toMatchObject([
-      { amount: 1 / 3, unit: 'cup', name: 'Cream Cheese', notes: '' },
+      { amount: 1 / 3, unit: 'cup', name: 'cream cheese', notes: '' },
     ])
   })
 
@@ -268,13 +285,35 @@ describe('parseIngredientLine', () => {
       { amount: null, unit: '', name: 'salt', notes: '', matchedIngredientId: null },
     ])
     expect(parseIngredientLine('Avocado oil spray', [])).toMatchObject([
-      { amount: null, unit: '', name: 'Avocado oil spray', notes: '', matchedIngredientId: null },
+      { amount: null, unit: '', name: 'avocado oil spray', notes: '', matchedIngredientId: null },
     ])
   })
 
   it('does not split a no-amount line into fake ingredients on plain commas without "and"', () => {
     expect(parseIngredientLine('Cooked rice, for serving, optional', [])).toMatchObject([
       { amount: null, unit: '', name: 'rice', notes: 'Cooked, for serving, optional' },
+    ])
+  })
+
+  it('defaults bare "pepper"/"black pepper" to stateCondition OTHER/"ground"', () => {
+    expect(parseIngredientLine('1 tsp black pepper', [])).toMatchObject([
+      { name: 'black pepper', stateCondition: 'OTHER', stateConditionOther: 'ground' },
+    ])
+    expect(parseIngredientLine('pepper', [])).toMatchObject([
+      { name: 'pepper', stateCondition: 'OTHER', stateConditionOther: 'ground' },
+    ])
+    expect(parseIngredientLine('salt and pepper to taste', [])).toMatchObject([
+      { name: 'salt', stateCondition: null, stateConditionOther: null },
+      { name: 'pepper', stateCondition: 'OTHER', stateConditionOther: 'ground' },
+    ])
+  })
+
+  it('does not default peppercorns or a produce "pepper" to ground', () => {
+    expect(parseIngredientLine('2 tsp peppercorns', [])).toMatchObject([
+      { name: 'peppercorns', stateCondition: null, stateConditionOther: null },
+    ])
+    expect(parseIngredientLine('1 red bell pepper', [])).toMatchObject([
+      { name: 'red bell pepper', stateCondition: null, stateConditionOther: null },
     ])
   })
 
@@ -286,6 +325,18 @@ describe('parseIngredientLine', () => {
   it('matches an existing catalog ingredient by alias', () => {
     const [result] = parseIngredientLine('1 cherry tomato', catalog)
     expect(result?.matchedIngredientId).toBe(1)
+  })
+
+  it('matches a catalog ingredient across a plural/singular difference, with no alias needed', () => {
+    const singularOnly: Ingredient[] = [
+      { id: 9, name: 'carrot', aliases: [], defaultUnit: null, category: 'PRODUCE' },
+    ]
+    expect(parseIngredientLine('2 carrots', singularOnly)[0]?.matchedIngredientId).toBe(9)
+
+    const pluralOnly: Ingredient[] = [
+      { id: 10, name: 'tomatoes', aliases: [], defaultUnit: null, category: 'PRODUCE' },
+    ]
+    expect(parseIngredientLine('1 tomato', pluralOnly)[0]?.matchedIngredientId).toBe(10)
   })
 
   it('leaves matchedIngredientId null when nothing in the catalog matches', () => {
