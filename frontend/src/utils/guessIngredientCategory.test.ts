@@ -35,12 +35,23 @@ describe('guessIngredientCategory', () => {
     expect(guessIngredientCategory('black pepper')).toBe('BAKING_AND_SPICES')
   })
 
+  it('distinguishes a dried/powdered spice-rack form from the fresh produce item', () => {
+    expect(guessIngredientCategory('garlic powder')).toBe('BAKING_AND_SPICES')
+    expect(guessIngredientCategory('garlic granules')).toBe('BAKING_AND_SPICES')
+    expect(guessIngredientCategory('onion powder')).toBe('BAKING_AND_SPICES')
+    expect(guessIngredientCategory('garlic')).toBe('PRODUCE')
+    expect(guessIngredientCategory('chili garlic sauce')).toBe('CONDIMENTS_AND_DRESSINGS')
+  })
+
   it('covers categories not represented in the real sample above', () => {
     expect(guessIngredientCategory('boneless chicken thighs')).toBe('MEAT_AND_SEAFOOD')
     expect(guessIngredientCategory('whole milk')).toBe('DAIRY')
     expect(guessIngredientCategory('sourdough bread')).toBe('BAKERY')
     expect(guessIngredientCategory('frozen peas')).toBe('FROZEN_FOODS')
     expect(guessIngredientCategory('orange juice')).toBe('BEVERAGES')
+    expect(guessIngredientCategory('mahi mahi fillets')).toBe('MEAT_AND_SEAFOOD')
+    expect(guessIngredientCategory('chickpeas')).toBe('CANNED_GOODS_AND_SOUP')
+    expect(guessIngredientCategory('garbanzo beans')).toBe('CANNED_GOODS_AND_SOUP')
   })
 
   it('falls back to OTHER for anything unrecognized', () => {

@@ -14,6 +14,11 @@ const RULES: { pattern: RegExp; category: IngredientCategory }[] = [
   { pattern: /\bvegetable (stock|broth)|\bchicken (stock|broth)|\bbeef (stock|broth)/, category: 'CANNED_GOODS_AND_SOUP' },
   { pattern: /\bbrussels sprout/, category: 'PRODUCE' },
   { pattern: /\bice cream/, category: 'FROZEN_FOODS' },
+  // dried/powdered spice-rack forms of a produce item aren't produce -- checked before the
+  // generic "garlic"/"onion" produce rule below, which would otherwise catch them first
+  { pattern: /\bgarlic (?:powder|granules)|\bonion (?:powder|granules)/, category: 'BAKING_AND_SPICES' },
+  // "garlic sauce"/"chili garlic sauce" are condiments, not produce, for the same reason
+  { pattern: /\bgarlic sauce|\bchili sauce/, category: 'CONDIMENTS_AND_DRESSINGS' },
   // "juice"/"wine"/"beer" etc. are strong enough signals to override whatever fruit or
   // grain name precedes them (e.g. "orange juice" is a beverage, not produce)
   { pattern: /\bjuice\b|\bwine\b|\bbeer\b|\bsoda\b/, category: 'BEVERAGES' },
@@ -31,7 +36,7 @@ const RULES: { pattern: RegExp; category: IngredientCategory }[] = [
   { pattern: /\bcheese|\bmilk\b|\bbutter|\byogurt|\bcream\b|\begg\b|\beggs\b/, category: 'DAIRY' },
 
   // meat & seafood
-  { pattern: /\bchicken|\bbeef|\bpork|\bturkey|\bbacon|\bsausage|\bfish\b|\bshrimp|\bsalmon|\btuna|\blamb/, category: 'MEAT_AND_SEAFOOD' },
+  { pattern: /\bchicken|\bbeef|\bpork|\bturkey|\bbacon|\bsausage|\bfish\b|\bshrimp|\bsalmon|\btuna|\blamb|\bmahi/, category: 'MEAT_AND_SEAFOOD' },
 
   // grains: pasta, rice, and other staple grains all land in the same bucket since
   // there's no dedicated "grains" category
@@ -44,7 +49,7 @@ const RULES: { pattern: RegExp; category: IngredientCategory }[] = [
   { pattern: /\bvinegar|\boil\b|\bketchup|\bmustard|\bmayo|\bsoy sauce|\bhot sauce|\bdressing|\bhoney/, category: 'CONDIMENTS_AND_DRESSINGS' },
 
   // canned goods & soup
-  { pattern: /\bstock\b|\bbroth\b|\bcanned|\bsoup\b|\bbeans\b/, category: 'CANNED_GOODS_AND_SOUP' },
+  { pattern: /\bstock\b|\bbroth\b|\bcanned|\bsoup\b|\bbeans\b|\bchickpea|\bgarbanzo/, category: 'CANNED_GOODS_AND_SOUP' },
 
   // beverages (wine/beer/juice/soda are already caught earlier, before produce/grain rules)
   { pattern: /\bcoffee\b|\btea\b/, category: 'BEVERAGES' },
