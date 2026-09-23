@@ -1,5 +1,6 @@
 package com.rhythmicdevil.menu_planner.config;
 
+import com.rhythmicdevil.menu_planner.backup.BackupException;
 import com.rhythmicdevil.menu_planner.recipeimport.RecipeImportException;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -38,6 +39,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RecipeImportException.class)
     public ResponseEntity<ApiError> handleImportFailure(RecipeImportException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiError(ex.getMessage()));
+    }
+
+    @ExceptionHandler(BackupException.class)
+    public ResponseEntity<ApiError> handleBackupFailure(BackupException ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiError(ex.getMessage()));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
