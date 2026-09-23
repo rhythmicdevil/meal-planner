@@ -1,7 +1,8 @@
 import { Link, useParams } from 'react-router-dom'
-import { Alert, Anchor, Button, Group, List, Loader, Stack, Text, Title } from '@mantine/core'
+import { Alert, Anchor, Button, Group, List, Loader, Stack, Text, Title, UnstyledButton } from '@mantine/core'
 import { useMealPlan, useShoppingList } from '../api/mealPlans'
 import { INGREDIENT_CATEGORY_LABELS, type IngredientCategory, type ShoppingListItem } from '../api/types'
+import { useCheckedShoppingItems } from '../hooks/useCheckedShoppingItems'
 
 // The backend already returns items sorted by category then name, so grouping via a
 // Map here (which preserves insertion order) keeps that order without re-sorting.
@@ -22,6 +23,7 @@ export function ShoppingListPage() {
   const { id } = useParams<{ id: string }>()
   const { data: mealPlan } = useMealPlan(id)
   const { data: shoppingList, isLoading, isError } = useShoppingList(id)
+  const { checked, toggle } = useCheckedShoppingItems(id ?? '')
 
   if (isLoading) return <Loader m="md" />
   if (isError || !shoppingList) return <Alert color="red" m="md">Could not load shopping list.</Alert>
@@ -54,27 +56,41 @@ export function ShoppingListPage() {
               <Title order={4} mb="xs">
                 {INGREDIENT_CATEGORY_LABELS[category]}
               </Title>
-              <List spacing="sm">
-                {items.map((item) => (
-                  <List.Item key={item.ingredientId}>
-                    {item.toTaste ? (
-                      <>
-                        {item.ingredientName}
-                        <Text span c="dimmed">
-                          {' '}
-                          — to taste
+              <List spacing="sm" listStyleType="none">
+                {items.map((item) => {
+                  const isChecked = checked.has(item.ingredientId)
+                  return (
+                    <List.Item key={item.ingredientId}>
+                      <UnstyledButton
+                        onClick={() => toggle(item.ingredientId)}
+                        style={{
+                          display: 'block',
+                          width: '100%',
+                          textAlign: 'left',
+                          textDecoration: isChecked ? 'line-through' : 'none',
+                          opacity: isChecked ? 0.5 : 1,
+                        }}
+                      >
+                        {item.toTaste ? (
+                          <>
+                            {item.ingredientName}
+                            <Text span c="dimmed">
+                              {' '}
+                              — to taste
+                            </Text>
+                          </>
+                        ) : (
+                          <>
+                            {item.totalAmount} {item.unit} {item.ingredientName}
+                          </>
+                        )}
+                        <Text size="sm" c="dimmed">
+                          {item.sourceRecipes.map((recipe) => recipe.name).join(', ')}
                         </Text>
-                      </>
-                    ) : (
-                      <>
-                        {item.totalAmount} {item.unit} {item.ingredientName}
-                      </>
-                    )}
-                    <Text size="sm" c="dimmed">
-                      {item.sourceRecipes.map((recipe) => recipe.name).join(', ')}
-                    </Text>
-                  </List.Item>
-                ))}
+                      </UnstyledButton>
+                    </List.Item>
+                  )
+                })}
               </List>
             </div>
           ))}
