@@ -46,6 +46,7 @@ export function IngredientListPage() {
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<IngredientCategory | null>(null)
   const [blocked, setBlocked] = useState<{ ingredientName: string; recipes: Recipe[] } | null>(null)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
 
   const query = search.trim().toLowerCase()
   const filtered = (ingredients ?? []).filter(
@@ -72,12 +73,15 @@ export function IngredientListPage() {
     }
 
     if (!window.confirm(`Delete "${ingredient.name}"? This can't be undone.`)) return
+    setDeletingId(ingredient.id)
     try {
       await deleteIngredient.mutateAsync(ingredient.id)
       notifications.show({ message: 'Ingredient deleted', color: 'green' })
     } catch (err) {
       const message = err instanceof ApiRequestError ? err.message : 'Something went wrong'
       notifications.show({ message, color: 'red' })
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -163,7 +167,7 @@ export function IngredientListPage() {
                     variant="subtle"
                     size="xs"
                     onClick={() => handleDelete(ingredient)}
-                    loading={deleteIngredient.isPending}
+                    loading={deletingId === ingredient.id}
                   >
                     Delete
                   </Button>

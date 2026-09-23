@@ -35,6 +35,7 @@ export function RecipeIngredientsEditor({ form, initialBulkPasteText }: Props) {
     const createdIdByName = new Map<string, number>()
     const newRows: RecipeIngredientRow[] = []
     let unresolvedCount = 0
+    let createFailedCount = 0
 
     for (const line of lines) {
       for (const parsed of parseIngredientLine(line, ingredients)) {
@@ -46,12 +47,19 @@ export function RecipeIngredientsEditor({ form, initialBulkPasteText }: Props) {
           if (alreadyCreated !== undefined) {
             ingredientId = alreadyCreated
           } else {
-            const created = await createIngredient.mutateAsync({
-              name: parsed.name,
-              category: guessIngredientCategory(parsed.name),
-            })
-            ingredientId = created.id
-            createdIdByName.set(key, created.id)
+            // One line's auto-create failing (e.g. a duplicate-name conflict from the
+            // backend) shouldn't abort the whole paste -- leave that row unlinked, like an
+            // unparseable line, and keep going instead of losing every other row too.
+            try {
+              const created = await createIngredient.mutateAsync({
+                name: parsed.name,
+                category: guessIngredientCategory(parsed.name),
+              })
+              ingredientId = created.id
+              createdIdByName.set(key, created.id)
+            } catch {
+              createFailedCount += 1
+            }
           }
         }
 
@@ -80,7 +88,13 @@ export function RecipeIngredientsEditor({ form, initialBulkPasteText }: Props) {
     if (unresolvedCount > 0) {
       parts.push(`${unresolvedCount} line${unresolvedCount === 1 ? '' : 's'} couldn't be parsed — check the notes on the new row${unresolvedCount === 1 ? '' : 's'}.`)
     }
-    notifications.show({ message: parts.join(' '), color: unresolvedCount > 0 ? 'yellow' : 'green' })
+    if (createFailedCount > 0) {
+      parts.push(`${createFailedCount} ingredient${createFailedCount === 1 ? '' : 's'} couldn't be created — those rows are unlinked, pick an existing ingredient or try again.`)
+    }
+    notifications.show({
+      message: parts.join(' '),
+      color: unresolvedCount > 0 || createFailedCount > 0 ? 'yellow' : 'green',
+    })
   }
 
   // Waits for the catalog to finish loading before auto-importing -- otherwise every line

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Button, Group, Modal, Select, Stack, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
+import { notifications } from '@mantine/notifications'
+import { ApiRequestError } from '../api/client'
 import { useCreateIngredient, useIngredients } from '../api/ingredients'
 import { INGREDIENT_CATEGORIES, INGREDIENT_CATEGORY_LABELS, type IngredientCategory } from '../api/types'
 
@@ -35,14 +37,25 @@ export function IngredientPicker({ value, onChange, error }: IngredientPickerPro
     .sort((a, b) => a.label.localeCompare(b.label))
 
   const handleQuickAdd = quickAddForm.onSubmit(async (values) => {
-    const created = await createIngredient.mutateAsync({
-      name: values.name.trim(),
-      category: values.category as IngredientCategory,
-      defaultUnit: values.defaultUnit.trim() || null,
-    })
-    onChange(created.id)
-    setModalOpen(false)
-    quickAddForm.reset()
+    try {
+      const created = await createIngredient.mutateAsync({
+        name: values.name.trim(),
+        category: values.category as IngredientCategory,
+        defaultUnit: values.defaultUnit.trim() || null,
+      })
+      onChange(created.id)
+      setModalOpen(false)
+      quickAddForm.reset()
+    } catch (err) {
+      if (err instanceof ApiRequestError) {
+        if (err.fieldErrors) {
+          quickAddForm.setErrors(err.fieldErrors)
+        }
+        notifications.show({ message: err.message, color: 'red' })
+      } else {
+        notifications.show({ message: 'Something went wrong', color: 'red' })
+      }
+    }
   })
 
   return (
