@@ -3,10 +3,10 @@ import type { Ingredient } from '../api/types'
 import { parseIngredientLine } from './parseIngredientLine'
 
 const catalog: Ingredient[] = [
-  { id: 1, name: 'cherry tomatoes', aliases: ['cherry tomato'], defaultUnit: null, category: 'PRODUCE' },
-  { id: 2, name: 'olive oil', aliases: [], defaultUnit: null, category: 'CONDIMENTS_AND_DRESSINGS' },
-  { id: 3, name: 'salt', aliases: ['kosher salt'], defaultUnit: null, category: 'BAKING_AND_SPICES' },
-  { id: 4, name: 'black pepper', aliases: ['pepper'], defaultUnit: null, category: 'BAKING_AND_SPICES' },
+  { id: 1, name: 'cherry tomatoes', aliases: ['cherry tomato'], defaultUnit: null, category: 'PRODUCE', stores: [] },
+  { id: 2, name: 'olive oil', aliases: [], defaultUnit: null, category: 'CONDIMENTS_AND_DRESSINGS', stores: [] },
+  { id: 3, name: 'salt', aliases: ['kosher salt'], defaultUnit: null, category: 'BAKING_AND_SPICES', stores: [] },
+  { id: 4, name: 'black pepper', aliases: ['pepper'], defaultUnit: null, category: 'BAKING_AND_SPICES', stores: [] },
 ]
 
 describe('parseIngredientLine', () => {
@@ -329,12 +329,12 @@ describe('parseIngredientLine', () => {
 
   it('matches a catalog ingredient across a plural/singular difference, with no alias needed', () => {
     const singularOnly: Ingredient[] = [
-      { id: 9, name: 'carrot', aliases: [], defaultUnit: null, category: 'PRODUCE' },
+      { id: 9, name: 'carrot', aliases: [], defaultUnit: null, category: 'PRODUCE', stores: [] },
     ]
     expect(parseIngredientLine('2 carrots', singularOnly)[0]?.matchedIngredientId).toBe(9)
 
     const pluralOnly: Ingredient[] = [
-      { id: 10, name: 'tomatoes', aliases: [], defaultUnit: null, category: 'PRODUCE' },
+      { id: 10, name: 'tomatoes', aliases: [], defaultUnit: null, category: 'PRODUCE', stores: [] },
     ]
     expect(parseIngredientLine('1 tomato', pluralOnly)[0]?.matchedIngredientId).toBe(10)
   })

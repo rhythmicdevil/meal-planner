@@ -53,6 +53,12 @@ export function StapleGroupDetailPage() {
                   — linked to {item.ingredientName}
                 </Text>
               )}
+              {item.stores.length > 0 && (
+                <Text span c="dimmed">
+                  {' '}
+                  ({item.stores.map((store) => store.name).join(', ')})
+                </Text>
+              )}
             </List.Item>
           ))}
         </List>

@@ -10,6 +10,7 @@ public record IngredientRequest(
         @NotBlank String name,
         Set<String> aliases,
         String defaultUnit,
-        @NotNull IngredientCategory category
+        @NotNull IngredientCategory category,
+        Set<Long> storeIds
 ) {
 }

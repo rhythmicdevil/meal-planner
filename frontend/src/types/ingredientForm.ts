@@ -5,6 +5,7 @@ export interface IngredientFormValues {
   category: IngredientCategory | null
   defaultUnit: string
   aliases: string[]
+  storeIds: string[]
 }
 
 export const emptyIngredientFormValues: IngredientFormValues = {
@@ -12,4 +13,5 @@ export const emptyIngredientFormValues: IngredientFormValues = {
   category: null,
   defaultUnit: '',
   aliases: [],
+  storeIds: [],
 }

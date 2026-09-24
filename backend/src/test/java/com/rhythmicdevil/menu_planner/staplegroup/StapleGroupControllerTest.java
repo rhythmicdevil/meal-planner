@@ -5,6 +5,8 @@ import com.rhythmicdevil.menu_planner.ingredient.IngredientCategory;
 import com.rhythmicdevil.menu_planner.ingredient.IngredientRepository;
 import com.rhythmicdevil.menu_planner.staplegroup.dto.StapleGroupRequest;
 import com.rhythmicdevil.menu_planner.staplegroup.dto.StapleItemRequest;
+import com.rhythmicdevil.menu_planner.store.Store;
+import com.rhythmicdevil.menu_planner.store.StoreRepository;
 import com.rhythmicdevil.menu_planner.support.AbstractApiTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -12,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -31,19 +34,25 @@ class StapleGroupControllerTest extends AbstractApiTest {
     @Autowired
     private IngredientRepository ingredientRepository;
 
+    @Autowired
+    private StoreRepository storeRepository;
+
     @AfterEach
     void cleanUp() {
         stapleGroupRepository.deleteAll();
         ingredientRepository.deleteAll();
+        storeRepository.deleteAll();
     }
 
     @Test
     void createFetchUpdateAndDelete() throws Exception {
         Ingredient bananas = ingredientRepository.save(new Ingredient("bananas", IngredientCategory.PRODUCE));
+        Store costco = storeRepository.save(new Store("Costco"));
+        Store safeway = storeRepository.save(new Store("Safeway"));
 
         StapleGroupRequest createRequest = new StapleGroupRequest("Paper Products", List.of(
-                new StapleItemRequest("paper towels", null),
-                new StapleItemRequest("bananas", bananas.getId())
+                new StapleItemRequest("paper towels", null, Set.of(costco.getId(), safeway.getId())),
+                new StapleItemRequest("bananas", bananas.getId(), null)
         ));
 
         String createResponse = mockMvc.perform(authenticated(post("/api/staple-groups"))
@@ -54,9 +63,13 @@ class StapleGroupControllerTest extends AbstractApiTest {
                 .andExpect(jsonPath("$.items.length()").value(2))
                 .andExpect(jsonPath("$.items[0].name").value("paper towels"))
                 .andExpect(jsonPath("$.items[0].ingredientId").doesNotExist())
+                .andExpect(jsonPath("$.items[0].stores.length()").value(2))
+                .andExpect(jsonPath("$.items[0].stores[0].name").value("Costco"))
+                .andExpect(jsonPath("$.items[0].stores[1].name").value("Safeway"))
                 .andExpect(jsonPath("$.items[1].name").value("bananas"))
                 .andExpect(jsonPath("$.items[1].ingredientId").value(bananas.getId()))
                 .andExpect(jsonPath("$.items[1].ingredientName").value("bananas"))
+                .andExpect(jsonPath("$.items[1].stores.length()").value(0))
                 .andReturn().getResponse().getContentAsString();
 
         Long groupId = objectMapper.readTree(createResponse).get("id").asLong();
@@ -67,7 +80,7 @@ class StapleGroupControllerTest extends AbstractApiTest {
 
         // replace the items wholesale with just one, unlinked
         StapleGroupRequest updateRequest = new StapleGroupRequest("Paper Products",
-                List.of(new StapleItemRequest("napkins", null)));
+                List.of(new StapleItemRequest("napkins", null, null)));
 
         mockMvc.perform(authenticated(put("/api/staple-groups/" + groupId))
                         .contentType("application/json")
@@ -86,7 +99,7 @@ class StapleGroupControllerTest extends AbstractApiTest {
     @Test
     void createWithUnknownIngredient_isNotFound() throws Exception {
         StapleGroupRequest request = new StapleGroupRequest("Ghost Group",
-                List.of(new StapleItemRequest("mystery item", 999999L)));
+                List.of(new StapleItemRequest("mystery item", 999999L, null)));
 
         mockMvc.perform(authenticated(post("/api/staple-groups"))
                         .contentType("application/json")

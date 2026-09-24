@@ -5,12 +5,16 @@ import com.rhythmicdevil.menu_planner.ingredient.IngredientRepository;
 import com.rhythmicdevil.menu_planner.staplegroup.dto.StapleGroupRequest;
 import com.rhythmicdevil.menu_planner.staplegroup.dto.StapleGroupResponse;
 import com.rhythmicdevil.menu_planner.staplegroup.dto.StapleItemRequest;
+import com.rhythmicdevil.menu_planner.store.Store;
+import com.rhythmicdevil.menu_planner.store.StoreRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @Transactional
@@ -18,10 +22,16 @@ public class StapleGroupService {
 
     private final StapleGroupRepository stapleGroupRepository;
     private final IngredientRepository ingredientRepository;
+    private final StoreRepository storeRepository;
 
-    public StapleGroupService(StapleGroupRepository stapleGroupRepository, IngredientRepository ingredientRepository) {
+    public StapleGroupService(
+            StapleGroupRepository stapleGroupRepository,
+            IngredientRepository ingredientRepository,
+            StoreRepository storeRepository
+    ) {
         this.stapleGroupRepository = stapleGroupRepository;
         this.ingredientRepository = ingredientRepository;
+        this.storeRepository = storeRepository;
     }
 
     @Transactional(readOnly = true)
@@ -72,7 +82,16 @@ public class StapleGroupService {
             ingredient = ingredientRepository.findById(request.ingredientId())
                     .orElseThrow(() -> new EntityNotFoundException("Ingredient " + request.ingredientId() + " not found"));
         }
-        return new StapleItem(request.name(), ingredient);
+        StapleItem item = new StapleItem(request.name(), ingredient);
+
+        Set<Long> storeIds = request.storeIds() != null ? request.storeIds() : Set.of();
+        Set<Store> stores = new HashSet<>(storeRepository.findAllById(storeIds));
+        if (stores.size() != storeIds.size()) {
+            throw new EntityNotFoundException("One or more stores not found");
+        }
+        item.setStores(stores);
+
+        return item;
     }
 
     private StapleGroup getOrThrow(Long id) {

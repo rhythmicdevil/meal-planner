@@ -3,7 +3,7 @@ import type { Ingredient, Recipe, RecipeIngredient } from '../api/types'
 import { findOrphanedIngredients } from './findOrphanedIngredients'
 
 function ingredient(id: number, name: string): Ingredient {
-  return { id, name, aliases: [], defaultUnit: null, category: 'OTHER' }
+  return { id, name, aliases: [], defaultUnit: null, category: 'OTHER', stores: [] }
 }
 
 function ri(ingredientId: number): RecipeIngredient {

@@ -105,12 +105,22 @@ export const STATE_CONDITIONS: StateCondition[] = [
   'OTHER',
 ]
 
+export interface Store {
+  id: number
+  name: string
+}
+
+export interface StoreRequest {
+  name: string
+}
+
 export interface Ingredient {
   id: number
   name: string
   aliases: string[]
   defaultUnit: string | null
   category: IngredientCategory
+  stores: Store[]
 }
 
 export interface IngredientRequest {
@@ -118,6 +128,7 @@ export interface IngredientRequest {
   aliases?: string[]
   defaultUnit?: string | null
   category: IngredientCategory
+  storeIds?: number[]
 }
 
 export interface RecipeStep {
@@ -199,11 +210,13 @@ export interface StapleItem {
   name: string
   ingredientId: number | null
   ingredientName: string | null
+  stores: Store[]
 }
 
 export interface StapleItemRequest {
   name: string
   ingredientId?: number | null
+  storeIds?: number[]
 }
 
 export interface StapleGroup {

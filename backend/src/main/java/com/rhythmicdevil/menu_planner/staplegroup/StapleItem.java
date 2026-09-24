@@ -1,14 +1,20 @@
 package com.rhythmicdevil.menu_planner.staplegroup;
 
 import com.rhythmicdevil.menu_planner.ingredient.Ingredient;
+import com.rhythmicdevil.menu_planner.store.Store;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "staple_item")
@@ -28,6 +34,14 @@ public class StapleItem {
     @ManyToOne
     @JoinColumn(name = "ingredient_id")
     private Ingredient ingredient;
+
+    @ManyToMany
+    @JoinTable(
+            name = "staple_item_store",
+            joinColumns = @JoinColumn(name = "staple_item_id"),
+            inverseJoinColumns = @JoinColumn(name = "store_id")
+    )
+    private Set<Store> stores = new HashSet<>();
 
     protected StapleItem() {
     }
@@ -63,5 +77,13 @@ public class StapleItem {
 
     public void setIngredient(Ingredient ingredient) {
         this.ingredient = ingredient;
+    }
+
+    public Set<Store> getStores() {
+        return stores;
+    }
+
+    public void setStores(Set<Store> stores) {
+        this.stores = stores;
     }
 }

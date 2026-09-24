@@ -31,7 +31,7 @@ import { SortableTh } from '../components/SortableTh'
 import { useSort } from '../hooks/useSort'
 import { findOrphanedIngredients } from '../utils/findOrphanedIngredients'
 
-type IngredientSortKey = 'name' | 'category' | 'defaultUnit'
+type IngredientSortKey = 'name' | 'category' | 'defaultUnit' | 'store'
 
 const ingredientComparators: Record<IngredientSortKey, (a: Ingredient, b: Ingredient) => number> = {
   name: (a, b) => a.name.localeCompare(b.name),
@@ -39,6 +39,9 @@ const ingredientComparators: Record<IngredientSortKey, (a: Ingredient, b: Ingred
     INGREDIENT_CATEGORY_LABELS[a.category].localeCompare(INGREDIENT_CATEGORY_LABELS[b.category]) ||
     a.name.localeCompare(b.name),
   defaultUnit: (a, b) => (a.defaultUnit ?? '').localeCompare(b.defaultUnit ?? '') || a.name.localeCompare(b.name),
+  store: (a, b) =>
+    a.stores.map((s) => s.name).join(', ').localeCompare(b.stores.map((s) => s.name).join(', ')) ||
+    a.name.localeCompare(b.name),
 }
 
 export function IngredientListPage() {
@@ -205,6 +208,13 @@ export function IngredientListPage() {
                 onSort={onSort}
               />
               <Table.Th>Aliases</Table.Th>
+              <SortableTh<IngredientSortKey>
+                label="Store"
+                sortKey="store"
+                activeKey={sortKey}
+                direction={direction}
+                onSort={onSort}
+              />
               <Table.Th />
             </Table.Tr>
           </Table.Thead>
@@ -221,6 +231,7 @@ export function IngredientListPage() {
                 <Table.Td>
                   <Text c="dimmed">{ingredient.aliases.length > 0 ? ingredient.aliases.join(', ') : '—'}</Text>
                 </Table.Td>
+                <Table.Td>{ingredient.stores.length > 0 ? ingredient.stores.map((s) => s.name).join(', ') : '—'}</Table.Td>
                 <Table.Td>
                   <Button
                     color="red"

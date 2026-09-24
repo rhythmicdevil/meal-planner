@@ -1,5 +1,6 @@
 package com.rhythmicdevil.menu_planner.ingredient;
 
+import com.rhythmicdevil.menu_planner.store.Store;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -10,6 +11,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 
 import java.util.HashSet;
@@ -37,6 +40,14 @@ public class Ingredient {
     @Enumerated(EnumType.STRING)
     @Column(name = "category", nullable = false)
     private IngredientCategory category;
+
+    @ManyToMany
+    @JoinTable(
+            name = "ingredient_store",
+            joinColumns = @JoinColumn(name = "ingredient_id"),
+            inverseJoinColumns = @JoinColumn(name = "store_id")
+    )
+    private Set<Store> stores = new HashSet<>();
 
     protected Ingredient() {
     }
@@ -80,5 +91,13 @@ public class Ingredient {
 
     public void setCategory(IngredientCategory category) {
         this.category = category;
+    }
+
+    public Set<Store> getStores() {
+        return stores;
+    }
+
+    public void setStores(Set<Store> stores) {
+        this.stores = stores;
     }
 }

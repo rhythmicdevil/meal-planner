@@ -19,10 +19,12 @@ import { ShoppingListPage } from './pages/ShoppingListPage'
 import { StapleGroupDetailPage } from './pages/StapleGroupDetailPage'
 import { StapleGroupFormPage } from './pages/StapleGroupFormPage'
 import { StapleGroupListPage } from './pages/StapleGroupListPage'
+import { StoreFormPage } from './pages/StoreFormPage'
+import { StoreListPage } from './pages/StoreListPage'
 
 function App() {
   return (
-    <AppShell header={{ height: { base: 160, sm: 56 } }} padding="md">
+    <AppShell header={{ height: { base: 180, sm: 56 } }} padding="md">
       <AppShell.Header className="no-print">
         <Group h="100%" px="md" justify="space-between" className="app-header-inner">
           <Title order={3}>Meal Planner</Title>
@@ -41,6 +43,9 @@ function App() {
             </Button>
             <Button variant="subtle" component={Link} to="/staple-groups">
               Staple Groups
+            </Button>
+            <Button variant="subtle" component={Link} to="/stores">
+              Stores
             </Button>
             <Button variant="subtle" component={Link} to="/backup">
               Backup
@@ -76,6 +81,9 @@ function App() {
           <Route path="/staple-groups/new" element={<StapleGroupFormPage />} />
           <Route path="/staple-groups/:id" element={<StapleGroupDetailPage />} />
           <Route path="/staple-groups/:id/edit" element={<StapleGroupFormPage />} />
+          <Route path="/stores" element={<StoreListPage />} />
+          <Route path="/stores/new" element={<StoreFormPage />} />
+          <Route path="/stores/:id/edit" element={<StoreFormPage />} />
           <Route path="/backup" element={<BackupPage />} />
           <Route path="/help" element={<HelpPage />} />
         </Routes>

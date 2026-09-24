@@ -1,11 +1,25 @@
 import { useEffect } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Anchor, Button, Group, List, LoadingOverlay, Select, Stack, TagsInput, Text, TextInput, Title } from '@mantine/core'
+import {
+  Anchor,
+  Button,
+  Group,
+  List,
+  LoadingOverlay,
+  MultiSelect,
+  Select,
+  Stack,
+  TagsInput,
+  Text,
+  TextInput,
+  Title,
+} from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { ApiRequestError } from '../api/client'
 import { useCreateIngredient, useIngredient, useUpdateIngredient } from '../api/ingredients'
 import { useRecipes } from '../api/recipes'
+import { useStores } from '../api/stores'
 import { INGREDIENT_CATEGORIES, INGREDIENT_CATEGORY_LABELS, type IngredientRequest } from '../api/types'
 import { emptyIngredientFormValues, type IngredientFormValues } from '../types/ingredientForm'
 
@@ -16,6 +30,7 @@ export function IngredientFormPage() {
 
   const { data: existing, isLoading: isLoadingExisting } = useIngredient(id)
   const { data: recipes = [] } = useRecipes()
+  const { data: stores = [] } = useStores()
   const createIngredient = useCreateIngredient()
   const updateIngredient = useUpdateIngredient(id ?? '')
 
@@ -39,6 +54,7 @@ export function IngredientFormPage() {
       category: existing.category,
       defaultUnit: existing.defaultUnit ?? '',
       aliases: existing.aliases,
+      storeIds: existing.stores.map((store) => String(store.id)),
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existing])
@@ -51,6 +67,7 @@ export function IngredientFormPage() {
       category: values.category!,
       defaultUnit: values.defaultUnit.trim() || null,
       aliases: values.aliases.map((alias) => alias.trim()).filter(Boolean),
+      storeIds: values.storeIds.map(Number),
     }
 
     try {
@@ -98,6 +115,14 @@ export function IngredientFormPage() {
             label="Aliases"
             placeholder="Type an alias and press Enter"
             {...form.getInputProps('aliases')}
+          />
+          <MultiSelect
+            label="Stores"
+            placeholder="Where do you get this?"
+            searchable
+            clearable
+            data={stores.map((store) => ({ value: String(store.id), label: store.name }))}
+            {...form.getInputProps('storeIds')}
           />
 
           <Group justify="flex-end">

@@ -1,11 +1,12 @@
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Button, Group, LoadingOverlay, Paper, Select, Stack, TextInput, Title } from '@mantine/core'
+import { Button, Group, LoadingOverlay, MultiSelect, Paper, Select, Stack, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { ApiRequestError } from '../api/client'
 import { useIngredients } from '../api/ingredients'
 import { useCreateStapleGroup, useStapleGroup, useUpdateStapleGroup } from '../api/stapleGroups'
+import { useStores } from '../api/stores'
 import type { StapleGroupRequest } from '../api/types'
 import { emptyStapleGroupFormValues, emptyStapleItemRow, type StapleGroupFormValues } from '../types/stapleGroupForm'
 
@@ -16,6 +17,7 @@ export function StapleGroupFormPage() {
 
   const { data: existing, isLoading: isLoadingExisting } = useStapleGroup(id)
   const { data: ingredients = [] } = useIngredients()
+  const { data: stores = [] } = useStores()
   const createStapleGroup = useCreateStapleGroup()
   const updateStapleGroup = useUpdateStapleGroup(id ?? '')
 
@@ -37,6 +39,7 @@ export function StapleGroupFormPage() {
       items: existing.items.map((item) => ({
         name: item.name,
         ingredientId: item.ingredientId,
+        storeIds: item.stores.map((store) => store.id),
       })),
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -48,12 +51,17 @@ export function StapleGroupFormPage() {
     .map((ingredient) => ({ value: String(ingredient.id), label: ingredient.name }))
     .sort((a, b) => a.label.localeCompare(b.label))
 
+  const storeOptions = stores
+    .map((store) => ({ value: String(store.id), label: store.name }))
+    .sort((a, b) => a.label.localeCompare(b.label))
+
   const handleSubmit = form.onSubmit(async (values) => {
     const request: StapleGroupRequest = {
       name: values.name.trim(),
       items: values.items.map((row) => ({
         name: row.name.trim(),
         ingredientId: row.ingredientId,
+        storeIds: row.storeIds,
       })),
     }
 
@@ -90,15 +98,15 @@ export function StapleGroupFormPage() {
           <Stack>
             {form.values.items.map((row, index) => (
               <Paper key={index} withBorder p="sm">
-                <Group align="flex-start" wrap="nowrap">
+                <Group align="flex-start" wrap="wrap">
                   <TextInput
-                    style={{ flex: 1 }}
+                    style={{ flex: 1, minWidth: 160 }}
                     label="Name"
                     placeholder="e.g. paper towels"
                     {...form.getInputProps(`items.${index}.name`)}
                   />
                   <Select
-                    style={{ flex: 1 }}
+                    style={{ flex: 1, minWidth: 160 }}
                     label="Link to an ingredient (optional)"
                     placeholder="Search ingredients…"
                     searchable
@@ -117,6 +125,16 @@ export function StapleGroupFormPage() {
                         }
                       }
                     }}
+                  />
+                  <MultiSelect
+                    style={{ flex: 1, minWidth: 160 }}
+                    label="Stores (optional)"
+                    placeholder="Where to get it…"
+                    searchable
+                    clearable
+                    data={storeOptions}
+                    value={row.storeIds.map(String)}
+                    onChange={(values) => form.setFieldValue(`items.${index}.storeIds`, values.map(Number))}
                   />
                   <Button
                     color="red"
