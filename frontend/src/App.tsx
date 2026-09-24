@@ -1,6 +1,7 @@
 import { Link, Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell, Button, Group, Title } from '@mantine/core'
 import { BackupPage } from './pages/BackupPage'
+import { HelpPage } from './pages/HelpPage'
 import { IngredientFormPage } from './pages/IngredientFormPage'
 import { IngredientListPage } from './pages/IngredientListPage'
 import { MealPlanDetailPage } from './pages/MealPlanDetailPage'
@@ -21,7 +22,7 @@ import { StapleGroupListPage } from './pages/StapleGroupListPage'
 
 function App() {
   return (
-    <AppShell header={{ height: { base: 140, sm: 56 } }} padding="md">
+    <AppShell header={{ height: { base: 160, sm: 56 } }} padding="md">
       <AppShell.Header className="no-print">
         <Group h="100%" px="md" justify="space-between" className="app-header-inner">
           <Title order={3}>Meal Planner</Title>
@@ -43,6 +44,9 @@ function App() {
             </Button>
             <Button variant="subtle" component={Link} to="/backup">
               Backup
+            </Button>
+            <Button variant="subtle" component={Link} to="/help">
+              Help
             </Button>
           </Group>
         </Group>
@@ -73,6 +77,7 @@ function App() {
           <Route path="/staple-groups/:id" element={<StapleGroupDetailPage />} />
           <Route path="/staple-groups/:id/edit" element={<StapleGroupFormPage />} />
           <Route path="/backup" element={<BackupPage />} />
+          <Route path="/help" element={<HelpPage />} />
         </Routes>
       </AppShell.Main>
     </AppShell>
