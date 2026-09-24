@@ -4,6 +4,7 @@ import {
   Alert,
   Anchor,
   Button,
+  Checkbox,
   Group,
   List,
   Loader,
@@ -28,6 +29,7 @@ import {
 } from '../api/types'
 import { SortableTh } from '../components/SortableTh'
 import { useSort } from '../hooks/useSort'
+import { findOrphanedIngredients } from '../utils/findOrphanedIngredients'
 
 type IngredientSortKey = 'name' | 'category' | 'defaultUnit'
 
@@ -47,6 +49,9 @@ export function IngredientListPage() {
   const [category, setCategory] = useState<IngredientCategory | null>(null)
   const [blocked, setBlocked] = useState<{ ingredientName: string; recipes: Recipe[] } | null>(null)
   const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [orphanModalOpen, setOrphanModalOpen] = useState(false)
+  const [selectedOrphanIds, setSelectedOrphanIds] = useState<Set<number>>(new Set())
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false)
 
   const query = search.trim().toLowerCase()
   const filtered = (ingredients ?? []).filter(
@@ -85,13 +90,68 @@ export function IngredientListPage() {
     }
   }
 
+  const orphaned = findOrphanedIngredients(ingredients ?? [], recipes ?? [])
+
+  const openOrphanModal = () => {
+    setSelectedOrphanIds(new Set())
+    setOrphanModalOpen(true)
+  }
+
+  const toggleOrphanSelection = (id: number) => {
+    setSelectedOrphanIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  const toggleSelectAllOrphans = (checked: boolean) => {
+    setSelectedOrphanIds(checked ? new Set(orphaned.map((ingredient) => ingredient.id)) : new Set())
+  }
+
+  const handleBulkDeleteOrphans = async () => {
+    const ids = [...selectedOrphanIds]
+    if (ids.length === 0) return
+    if (!window.confirm(`Delete ${ids.length} ingredient${ids.length === 1 ? '' : 's'}? This can't be undone.`)) {
+      return
+    }
+
+    setIsBulkDeleting(true)
+    const results = await Promise.allSettled(ids.map((id) => deleteIngredient.mutateAsync(id)))
+    setIsBulkDeleting(false)
+    setSelectedOrphanIds(new Set())
+
+    const failedCount = results.filter((result) => result.status === 'rejected').length
+    const succeededCount = results.length - failedCount
+    if (failedCount === 0) {
+      notifications.show({ message: `Deleted ${succeededCount} ingredient${succeededCount === 1 ? '' : 's'}.`, color: 'green' })
+      setOrphanModalOpen(false)
+    } else {
+      notifications.show({
+        message:
+          `Deleted ${succeededCount} ingredient${succeededCount === 1 ? '' : 's'}. ` +
+          `${failedCount} couldn't be deleted -- still referenced by a recipe.`,
+        color: 'yellow',
+      })
+    }
+  }
+
   return (
     <Stack p="md">
       <Group justify="space-between">
         <Title order={2}>Ingredients</Title>
-        <Button component={Link} to="/ingredients/new">
-          New Ingredient
-        </Button>
+        <Group>
+          <Button variant="default" onClick={openOrphanModal}>
+            Orphaned Ingredients
+          </Button>
+          <Button component={Link} to="/ingredients/new">
+            New Ingredient
+          </Button>
+        </Group>
       </Group>
 
       <Group>
@@ -197,6 +257,49 @@ export function IngredientListPage() {
           <Group justify="flex-end">
             <Button onClick={() => setBlocked(null)}>Close</Button>
           </Group>
+        </Stack>
+      </Modal>
+
+      <Modal opened={orphanModalOpen} onClose={() => setOrphanModalOpen(false)} title="Orphaned ingredients" size="md">
+        <Stack>
+          <Text size="sm" c="dimmed">
+            Ingredients not used by any recipe.
+          </Text>
+          {orphaned.length === 0 ? (
+            <Text c="dimmed">No orphaned ingredients found.</Text>
+          ) : (
+            <>
+              <Checkbox
+                label={`Select all (${orphaned.length})`}
+                checked={selectedOrphanIds.size === orphaned.length}
+                indeterminate={selectedOrphanIds.size > 0 && selectedOrphanIds.size < orphaned.length}
+                onChange={(event) => toggleSelectAllOrphans(event.currentTarget.checked)}
+              />
+              <Stack gap="xs" mah={400} style={{ overflowY: 'auto' }}>
+                {orphaned.map((ingredient) => (
+                  <Checkbox
+                    key={ingredient.id}
+                    label={`${ingredient.name} (${INGREDIENT_CATEGORY_LABELS[ingredient.category]})`}
+                    checked={selectedOrphanIds.has(ingredient.id)}
+                    onChange={() => toggleOrphanSelection(ingredient.id)}
+                  />
+                ))}
+              </Stack>
+              <Group justify="flex-end">
+                <Button variant="default" onClick={() => setOrphanModalOpen(false)}>
+                  Close
+                </Button>
+                <Button
+                  color="red"
+                  onClick={handleBulkDeleteOrphans}
+                  loading={isBulkDeleting}
+                  disabled={selectedOrphanIds.size === 0}
+                >
+                  Delete selected ({selectedOrphanIds.size})
+                </Button>
+              </Group>
+            </>
+          )}
         </Stack>
       </Modal>
     </Stack>
