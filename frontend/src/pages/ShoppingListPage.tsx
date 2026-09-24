@@ -1,7 +1,12 @@
 import { Link, useParams } from 'react-router-dom'
 import { Alert, Anchor, Button, Group, List, Loader, Stack, Text, Title, UnstyledButton } from '@mantine/core'
 import { useMealPlan, useShoppingList } from '../api/mealPlans'
-import { INGREDIENT_CATEGORY_LABELS, type IngredientCategory, type ShoppingListItem } from '../api/types'
+import {
+  INGREDIENT_CATEGORY_LABELS,
+  type IngredientCategory,
+  type ShoppingListItem,
+  type ShoppingListStapleItem,
+} from '../api/types'
 import { useCheckedShoppingItems } from '../hooks/useCheckedShoppingItems'
 
 // The backend already returns items sorted by category then name, so grouping via a
@@ -19,11 +24,30 @@ function groupByCategory(items: ShoppingListItem[]): Map<IngredientCategory, Sho
   return groups
 }
 
+// Same insertion-order-preserving grouping, keyed by staple group name instead of category
+// (the backend already returns stapleItems pre-sorted by group name then item name).
+function groupByStapleGroupName(items: ShoppingListStapleItem[]): Map<string, ShoppingListStapleItem[]> {
+  const groups = new Map<string, ShoppingListStapleItem[]>()
+  for (const item of items) {
+    const group = groups.get(item.stapleGroupName)
+    if (group) {
+      group.push(item)
+    } else {
+      groups.set(item.stapleGroupName, [item])
+    }
+  }
+  return groups
+}
+
 export function ShoppingListPage() {
   const { id } = useParams<{ id: string }>()
   const { data: mealPlan } = useMealPlan(id)
   const { data: shoppingList, isLoading, isError } = useShoppingList(id)
   const { checked, toggle } = useCheckedShoppingItems(id ?? '')
+  // A separate checked-set/storage namespace from the ingredient items above -- a staple
+  // item's id is from its own id space and could otherwise collide with an unrelated
+  // ingredient id.
+  const { checked: stapleChecked, toggle: toggleStaple } = useCheckedShoppingItems(`${id ?? ''}:staples`)
 
   if (isLoading) return <Loader m="md" />
   if (isError || !shoppingList) return <Alert color="red" m="md">Could not load shopping list.</Alert>
@@ -95,6 +119,42 @@ export function ShoppingListPage() {
             </div>
           ))}
         </div>
+      )}
+
+      {shoppingList.stapleItems.length > 0 && (
+        <>
+          <Title order={3}>Staples</Title>
+          <div className="shopping-list-columns">
+            {[...groupByStapleGroupName(shoppingList.stapleItems)].map(([stapleGroupName, items]) => (
+              <div key={stapleGroupName} style={{ breakInside: 'avoid', marginBottom: 'var(--mantine-spacing-lg)' }}>
+                <Title order={4} mb="xs">
+                  {stapleGroupName}
+                </Title>
+                <List spacing="sm" listStyleType="none">
+                  {items.map((item) => {
+                    const isChecked = stapleChecked.has(item.stapleItemId)
+                    return (
+                      <List.Item key={item.stapleItemId}>
+                        <UnstyledButton
+                          onClick={() => toggleStaple(item.stapleItemId)}
+                          style={{
+                            display: 'block',
+                            width: '100%',
+                            textAlign: 'left',
+                            textDecoration: isChecked ? 'line-through' : 'none',
+                            opacity: isChecked ? 0.5 : 1,
+                          }}
+                        >
+                          {item.name}
+                        </UnstyledButton>
+                      </List.Item>
+                    )
+                  })}
+                </List>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </Stack>
   )

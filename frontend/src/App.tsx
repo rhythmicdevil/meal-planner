@@ -15,6 +15,9 @@ import { RecipeFormPage } from './pages/RecipeFormPage'
 import { RecipeImportPage } from './pages/RecipeImportPage'
 import { RecipeListPage } from './pages/RecipeListPage'
 import { ShoppingListPage } from './pages/ShoppingListPage'
+import { StapleGroupDetailPage } from './pages/StapleGroupDetailPage'
+import { StapleGroupFormPage } from './pages/StapleGroupFormPage'
+import { StapleGroupListPage } from './pages/StapleGroupListPage'
 
 function App() {
   return (
@@ -34,6 +37,9 @@ function App() {
             </Button>
             <Button variant="subtle" component={Link} to="/ingredients">
               Ingredients
+            </Button>
+            <Button variant="subtle" component={Link} to="/staple-groups">
+              Staple Groups
             </Button>
             <Button variant="subtle" component={Link} to="/backup">
               Backup
@@ -62,6 +68,10 @@ function App() {
           <Route path="/ingredients" element={<IngredientListPage />} />
           <Route path="/ingredients/new" element={<IngredientFormPage />} />
           <Route path="/ingredients/:id/edit" element={<IngredientFormPage />} />
+          <Route path="/staple-groups" element={<StapleGroupListPage />} />
+          <Route path="/staple-groups/new" element={<StapleGroupFormPage />} />
+          <Route path="/staple-groups/:id" element={<StapleGroupDetailPage />} />
+          <Route path="/staple-groups/:id/edit" element={<StapleGroupFormPage />} />
           <Route path="/backup" element={<BackupPage />} />
         </Routes>
       </AppShell.Main>

@@ -9,6 +9,8 @@ import com.rhythmicdevil.menu_planner.recipe.StateCondition;
 import com.rhythmicdevil.menu_planner.recipe.dto.RecipeSummary;
 import com.rhythmicdevil.menu_planner.shoppinglist.dto.ShoppingListItemResponse;
 import com.rhythmicdevil.menu_planner.shoppinglist.dto.ShoppingListResponse;
+import com.rhythmicdevil.menu_planner.shoppinglist.dto.ShoppingListStapleItemResponse;
+import com.rhythmicdevil.menu_planner.staplegroup.StapleItem;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +19,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -38,7 +41,9 @@ public class ShoppingListService {
         MealPlan mealPlan = mealPlanRepository.findById(mealPlanId)
                 .orElseThrow(() -> new EntityNotFoundException("MealPlan " + mealPlanId + " not found"));
         List<Recipe> recipes = mealPlan.flattenRecipes();
-        return new ShoppingListResponse(mealPlanId, computeItems(recipes));
+        List<ShoppingListItemResponse> items = computeItems(recipes);
+        List<ShoppingListStapleItemResponse> stapleItems = computeStapleItems(mealPlan.flattenStapleItems(), items);
+        return new ShoppingListResponse(mealPlanId, items, stapleItems);
     }
 
     // Keyed by Ingredient reference (not id) -- within one Hibernate session the same
@@ -132,5 +137,44 @@ public class ShoppingListService {
         items.sort(Comparator.comparing(ShoppingListItemResponse::category)
                 .thenComparing(ShoppingListItemResponse::ingredientName, String.CASE_INSENSITIVE_ORDER));
         return items;
+    }
+
+    // A staple item linked to an ingredient that's already needed for a recipe this week is
+    // suppressed (the recipe-derived line already covers buying it) rather than shown twice;
+    // staple items are also deduped against each other, by ingredient when linked or by name
+    // when not.
+    static List<ShoppingListStapleItemResponse> computeStapleItems(
+            List<StapleItem> stapleItems, List<ShoppingListItemResponse> recipeItems) {
+        Set<Long> ingredientIdsAlreadyListed = new HashSet<>();
+        for (ShoppingListItemResponse item : recipeItems) {
+            ingredientIdsAlreadyListed.add(item.ingredientId());
+        }
+
+        List<ShoppingListStapleItemResponse> result = new ArrayList<>();
+        Set<Object> seen = new HashSet<>();
+
+        for (StapleItem stapleItem : stapleItems) {
+            Long ingredientId = stapleItem.getIngredient() != null ? stapleItem.getIngredient().getId() : null;
+
+            if (ingredientId != null && ingredientIdsAlreadyListed.contains(ingredientId)) {
+                continue;
+            }
+
+            Object dedupeKey = ingredientId != null ? ingredientId : stapleItem.getName().trim().toLowerCase();
+            if (!seen.add(dedupeKey)) {
+                continue;
+            }
+
+            result.add(new ShoppingListStapleItemResponse(
+                    stapleItem.getId(),
+                    stapleItem.getName(),
+                    ingredientId,
+                    stapleItem.getStapleGroup().getName()
+            ));
+        }
+
+        result.sort(Comparator.comparing(ShoppingListStapleItemResponse::stapleGroupName, String.CASE_INSENSITIVE_ORDER)
+                .thenComparing(ShoppingListStapleItemResponse::name, String.CASE_INSENSITIVE_ORDER));
+        return result;
     }
 }

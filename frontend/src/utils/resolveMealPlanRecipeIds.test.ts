@@ -19,12 +19,14 @@ const recipeRow = (recipeId: number): MealPlanItemRow => ({
   itemType: 'RECIPE',
   recipeId: String(recipeId),
   menuId: null,
+  stapleGroupId: null,
 })
 
 const menuRow = (menuId: number): MealPlanItemRow => ({
   itemType: 'MENU',
   recipeId: null,
   menuId: String(menuId),
+  stapleGroupId: null,
 })
 
 describe('resolveMealPlanRecipeIds', () => {
@@ -45,7 +47,9 @@ describe('resolveMealPlanRecipeIds', () => {
   })
 
   it('ignores an incomplete row (no recipeId/menuId selected yet)', () => {
-    expect(resolveMealPlanRecipeIds([{ itemType: 'RECIPE', recipeId: null, menuId: null }], menus)).toEqual([])
+    expect(
+      resolveMealPlanRecipeIds([{ itemType: 'RECIPE', recipeId: null, menuId: null, stapleGroupId: null }], menus),
+    ).toEqual([])
   })
 
   it('ignores a menu item referencing an unknown or empty menu', () => {

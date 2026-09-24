@@ -2,6 +2,7 @@ package com.rhythmicdevil.menu_planner.mealplan;
 
 import com.rhythmicdevil.menu_planner.menu.Menu;
 import com.rhythmicdevil.menu_planner.recipe.Recipe;
+import com.rhythmicdevil.menu_planner.staplegroup.StapleGroup;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -37,6 +38,10 @@ public class MealPlanItem {
     @JoinColumn(name = "menu_id")
     private Menu menu;
 
+    @ManyToOne
+    @JoinColumn(name = "staple_group_id")
+    private StapleGroup stapleGroup;
+
     protected MealPlanItem() {
     }
 
@@ -54,6 +59,12 @@ public class MealPlanItem {
     public static MealPlanItem forMenu(MealPlan mealPlan, Menu menu) {
         MealPlanItem item = new MealPlanItem(mealPlan, MealPlanItemType.MENU);
         item.menu = menu;
+        return item;
+    }
+
+    public static MealPlanItem forStapleGroup(MealPlan mealPlan, StapleGroup stapleGroup) {
+        MealPlanItem item = new MealPlanItem(mealPlan, MealPlanItemType.STAPLE_GROUP);
+        item.stapleGroup = stapleGroup;
         return item;
     }
 
@@ -75,5 +86,9 @@ public class MealPlanItem {
 
     public Menu getMenu() {
         return menu;
+    }
+
+    public StapleGroup getStapleGroup() {
+        return stapleGroup;
     }
 }

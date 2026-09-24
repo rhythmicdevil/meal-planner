@@ -194,19 +194,44 @@ export interface MenuRequest {
   recipeIds: number[]
 }
 
-export type MealPlanItemType = 'RECIPE' | 'MENU'
+export interface StapleItem {
+  id: number
+  name: string
+  ingredientId: number | null
+  ingredientName: string | null
+}
+
+export interface StapleItemRequest {
+  name: string
+  ingredientId?: number | null
+}
+
+export interface StapleGroup {
+  id: number
+  name: string
+  items: StapleItem[]
+}
+
+export interface StapleGroupRequest {
+  name: string
+  items: StapleItemRequest[]
+}
+
+export type MealPlanItemType = 'RECIPE' | 'MENU' | 'STAPLE_GROUP'
 
 export interface MealPlanItem {
   id: number
   itemType: MealPlanItemType
   recipe: RecipeSummary | null
   menu: Menu | null
+  stapleGroup: StapleGroup | null
 }
 
 export interface MealPlanItemRequest {
   itemType: MealPlanItemType
   recipeId: number | null
   menuId: number | null
+  stapleGroupId: number | null
 }
 
 export interface MealPlan {
@@ -234,9 +259,17 @@ export interface ShoppingListItem {
   sourceRecipes: RecipeSummary[]
 }
 
+export interface ShoppingListStapleItem {
+  stapleItemId: number
+  name: string
+  ingredientId: number | null
+  stapleGroupName: string
+}
+
 export interface ShoppingList {
   mealPlanId: number
   items: ShoppingListItem[]
+  stapleItems: ShoppingListStapleItem[]
 }
 
 export interface PrepListItem {

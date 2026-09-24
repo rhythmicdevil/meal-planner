@@ -7,6 +7,8 @@ import com.rhythmicdevil.menu_planner.menu.Menu;
 import com.rhythmicdevil.menu_planner.menu.MenuRepository;
 import com.rhythmicdevil.menu_planner.recipe.Recipe;
 import com.rhythmicdevil.menu_planner.recipe.RecipeRepository;
+import com.rhythmicdevil.menu_planner.staplegroup.StapleGroup;
+import com.rhythmicdevil.menu_planner.staplegroup.StapleGroupRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,12 +23,14 @@ public class MealPlanService {
     private final MealPlanRepository mealPlanRepository;
     private final RecipeRepository recipeRepository;
     private final MenuRepository menuRepository;
+    private final StapleGroupRepository stapleGroupRepository;
 
     public MealPlanService(MealPlanRepository mealPlanRepository, RecipeRepository recipeRepository,
-                            MenuRepository menuRepository) {
+                            MenuRepository menuRepository, StapleGroupRepository stapleGroupRepository) {
         this.mealPlanRepository = mealPlanRepository;
         this.recipeRepository = recipeRepository;
         this.menuRepository = menuRepository;
+        this.stapleGroupRepository = stapleGroupRepository;
     }
 
     @Transactional(readOnly = true)
@@ -77,25 +81,35 @@ public class MealPlanService {
     private MealPlanItem toMealPlanItem(MealPlan mealPlan, MealPlanItemRequest request) {
         boolean hasRecipe = request.recipeId() != null;
         boolean hasMenu = request.menuId() != null;
+        boolean hasStapleGroup = request.stapleGroupId() != null;
 
         return switch (request.itemType()) {
             case RECIPE -> {
-                if (!hasRecipe || hasMenu) {
+                if (!hasRecipe || hasMenu || hasStapleGroup) {
                     throw new IllegalArgumentException(
-                            "A RECIPE item must set recipeId and leave menuId unset");
+                            "A RECIPE item must set recipeId and leave menuId/stapleGroupId unset");
                 }
                 Recipe recipe = recipeRepository.findById(request.recipeId())
                         .orElseThrow(() -> new EntityNotFoundException("Recipe " + request.recipeId() + " not found"));
                 yield MealPlanItem.forRecipe(mealPlan, recipe);
             }
             case MENU -> {
-                if (!hasMenu || hasRecipe) {
+                if (!hasMenu || hasRecipe || hasStapleGroup) {
                     throw new IllegalArgumentException(
-                            "A MENU item must set menuId and leave recipeId unset");
+                            "A MENU item must set menuId and leave recipeId/stapleGroupId unset");
                 }
                 Menu menu = menuRepository.findById(request.menuId())
                         .orElseThrow(() -> new EntityNotFoundException("Menu " + request.menuId() + " not found"));
                 yield MealPlanItem.forMenu(mealPlan, menu);
+            }
+            case STAPLE_GROUP -> {
+                if (!hasStapleGroup || hasRecipe || hasMenu) {
+                    throw new IllegalArgumentException(
+                            "A STAPLE_GROUP item must set stapleGroupId and leave recipeId/menuId unset");
+                }
+                StapleGroup stapleGroup = stapleGroupRepository.findById(request.stapleGroupId())
+                        .orElseThrow(() -> new EntityNotFoundException("StapleGroup " + request.stapleGroupId() + " not found"));
+                yield MealPlanItem.forStapleGroup(mealPlan, stapleGroup);
             }
         };
     }

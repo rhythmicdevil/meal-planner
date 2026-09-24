@@ -61,7 +61,7 @@ class MealPlanControllerTest extends AbstractApiTest {
 
         MealPlanRequest request = new MealPlanRequest(
                 "This Week", null, null,
-                List.of(new MealPlanItemRequest(MealPlanItemType.RECIPE, pancakes.getId(), null)));
+                List.of(new MealPlanItemRequest(MealPlanItemType.RECIPE, pancakes.getId(), null, null)));
 
         String createResponse = mockMvc.perform(authenticated(post("/api/meal-plans"))
                         .contentType("application/json")
@@ -93,7 +93,7 @@ class MealPlanControllerTest extends AbstractApiTest {
 
         MealPlanRequest request = new MealPlanRequest(
                 "This Week", null, null,
-                List.of(new MealPlanItemRequest(MealPlanItemType.RECIPE, pancakes.getId(), null)));
+                List.of(new MealPlanItemRequest(MealPlanItemType.RECIPE, pancakes.getId(), null, null)));
 
         String createResponse = mockMvc.perform(authenticated(post("/api/meal-plans"))
                         .contentType("application/json")
@@ -105,7 +105,7 @@ class MealPlanControllerTest extends AbstractApiTest {
         // replace the items wholesale with a different recipe
         MealPlanRequest updateRequest = new MealPlanRequest(
                 "This Week v2", null, null,
-                List.of(new MealPlanItemRequest(MealPlanItemType.RECIPE, waffles.getId(), null)));
+                List.of(new MealPlanItemRequest(MealPlanItemType.RECIPE, waffles.getId(), null, null)));
 
         mockMvc.perform(authenticated(put("/api/meal-plans/" + mealPlanId))
                         .contentType("application/json")
@@ -130,7 +130,7 @@ class MealPlanControllerTest extends AbstractApiTest {
 
         MealPlanRequest request = new MealPlanRequest(
                 "This Week", null, null,
-                List.of(new MealPlanItemRequest(MealPlanItemType.MENU, null, tacoNight.getId())));
+                List.of(new MealPlanItemRequest(MealPlanItemType.MENU, null, tacoNight.getId(), null)));
 
         mockMvc.perform(authenticated(post("/api/meal-plans"))
                         .contentType("application/json")
@@ -148,7 +148,7 @@ class MealPlanControllerTest extends AbstractApiTest {
         // itemType RECIPE but menuId set instead of recipeId
         MealPlanRequest request = new MealPlanRequest(
                 "This Week", null, null,
-                List.of(new MealPlanItemRequest(MealPlanItemType.RECIPE, null, menu.getId())));
+                List.of(new MealPlanItemRequest(MealPlanItemType.RECIPE, null, menu.getId(), null)));
 
         mockMvc.perform(authenticated(post("/api/meal-plans"))
                         .contentType("application/json")
@@ -160,7 +160,7 @@ class MealPlanControllerTest extends AbstractApiTest {
     void createWithUnknownRecipe_isNotFound() throws Exception {
         MealPlanRequest request = new MealPlanRequest(
                 "This Week", null, null,
-                List.of(new MealPlanItemRequest(MealPlanItemType.RECIPE, 999999L, null)));
+                List.of(new MealPlanItemRequest(MealPlanItemType.RECIPE, 999999L, null, null)));
 
         mockMvc.perform(authenticated(post("/api/meal-plans"))
                         .contentType("application/json")
@@ -179,7 +179,7 @@ class MealPlanControllerTest extends AbstractApiTest {
 
         MealPlanRequest request = new MealPlanRequest(
                 "This Week", null, null,
-                List.of(new MealPlanItemRequest(MealPlanItemType.RECIPE, pancakes.getId(), null)));
+                List.of(new MealPlanItemRequest(MealPlanItemType.RECIPE, pancakes.getId(), null, null)));
 
         String createResponse = mockMvc.perform(authenticated(post("/api/meal-plans"))
                         .contentType("application/json")
@@ -214,7 +214,7 @@ class MealPlanControllerTest extends AbstractApiTest {
 
         MealPlanRequest request = new MealPlanRequest(
                 "This Week", null, null,
-                List.of(new MealPlanItemRequest(MealPlanItemType.RECIPE, soup.getId(), null)));
+                List.of(new MealPlanItemRequest(MealPlanItemType.RECIPE, soup.getId(), null, null)));
 
         String createResponse = mockMvc.perform(authenticated(post("/api/meal-plans"))
                         .contentType("application/json")

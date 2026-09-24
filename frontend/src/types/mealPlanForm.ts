@@ -4,6 +4,7 @@ export interface MealPlanItemRow {
   itemType: MealPlanItemType
   recipeId: string | null
   menuId: string | null
+  stapleGroupId: string | null
 }
 
 export interface MealPlanFormValues {
@@ -17,6 +18,7 @@ export const emptyMealPlanItemRow = (): MealPlanItemRow => ({
   itemType: 'RECIPE',
   recipeId: null,
   menuId: null,
+  stapleGroupId: null,
 })
 
 export const emptyMealPlanFormValues: MealPlanFormValues = {

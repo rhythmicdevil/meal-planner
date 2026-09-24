@@ -1,6 +1,7 @@
 package com.rhythmicdevil.menu_planner.mealplan;
 
 import com.rhythmicdevil.menu_planner.recipe.Recipe;
+import com.rhythmicdevil.menu_planner.staplegroup.StapleItem;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -86,8 +87,21 @@ public class MealPlan {
             switch (item.getItemType()) {
                 case RECIPE -> recipes.add(item.getRecipe());
                 case MENU -> recipes.addAll(item.getMenu().getRecipes());
+                case STAPLE_GROUP -> {
+                    // no recipes contributed by a staple group
+                }
             }
         }
         return recipes;
+    }
+
+    public List<StapleItem> flattenStapleItems() {
+        List<StapleItem> stapleItems = new ArrayList<>();
+        for (MealPlanItem item : items) {
+            if (item.getItemType() == MealPlanItemType.STAPLE_GROUP) {
+                stapleItems.addAll(item.getStapleGroup().getItems());
+            }
+        }
+        return stapleItems;
     }
 }

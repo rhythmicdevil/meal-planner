@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 public record MealPlanItemRequest(
         @NotNull MealPlanItemType itemType,
         Long recipeId,
-        Long menuId
+        Long menuId,
+        Long stapleGroupId
 ) {
 }

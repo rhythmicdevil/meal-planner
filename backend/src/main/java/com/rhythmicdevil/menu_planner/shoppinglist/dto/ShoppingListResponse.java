@@ -4,6 +4,7 @@ import java.util.List;
 
 public record ShoppingListResponse(
         Long mealPlanId,
-        List<ShoppingListItemResponse> items
+        List<ShoppingListItemResponse> items,
+        List<ShoppingListStapleItemResponse> stapleItems
 ) {
 }

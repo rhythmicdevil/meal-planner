@@ -43,6 +43,7 @@ export function MealPlanFormPage() {
         itemType: item.itemType,
         recipeId: item.recipe ? String(item.recipe.id) : null,
         menuId: item.menu ? String(item.menu.id) : null,
+        stapleGroupId: item.stapleGroup ? String(item.stapleGroup.id) : null,
       })),
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -71,6 +72,10 @@ export function MealPlanFormPage() {
         form.setFieldError(`items.${index}.menuId`, 'Select a menu')
         hasItemErrors = true
       }
+      if (row.itemType === 'STAPLE_GROUP' && !row.stapleGroupId) {
+        form.setFieldError(`items.${index}.stapleGroupId`, 'Select a staple group')
+        hasItemErrors = true
+      }
     })
     if (hasItemErrors) return
 
@@ -82,6 +87,7 @@ export function MealPlanFormPage() {
         itemType: row.itemType,
         recipeId: row.itemType === 'RECIPE' ? Number(row.recipeId) : null,
         menuId: row.itemType === 'MENU' ? Number(row.menuId) : null,
+        stapleGroupId: row.itemType === 'STAPLE_GROUP' ? Number(row.stapleGroupId) : null,
       })),
     }
 
@@ -124,7 +130,12 @@ export function MealPlanFormPage() {
           <RecipeSuggestions
             suggestions={suggestions}
             onAdd={(recipeId) =>
-              form.insertListItem('items', { itemType: 'RECIPE', recipeId: String(recipeId), menuId: null })
+              form.insertListItem('items', {
+                itemType: 'RECIPE',
+                recipeId: String(recipeId),
+                menuId: null,
+                stapleGroupId: null,
+              })
             }
           />
 
