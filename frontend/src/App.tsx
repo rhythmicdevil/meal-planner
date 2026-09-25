@@ -1,5 +1,5 @@
 import { Link, Navigate, Route, Routes } from 'react-router-dom'
-import { AppShell, Button, Group, Title } from '@mantine/core'
+import { AppShell, Button, Group, Menu, Title } from '@mantine/core'
 import { BackupPage } from './pages/BackupPage'
 import { HelpPage } from './pages/HelpPage'
 import { IngredientFormPage } from './pages/IngredientFormPage'
@@ -24,7 +24,7 @@ import { StoreListPage } from './pages/StoreListPage'
 
 function App() {
   return (
-    <AppShell header={{ height: { base: 180, sm: 56 } }} padding="md">
+    <AppShell header={{ height: { base: 110, sm: 56 } }} padding="md">
       <AppShell.Header className="no-print">
         <Group h="100%" px="md" justify="space-between" className="app-header-inner">
           <Title order={3}>Meal Planner</Title>
@@ -32,27 +32,36 @@ function App() {
             <Button variant="subtle" component={Link} to="/recipes">
               Recipes
             </Button>
-            <Button variant="subtle" component={Link} to="/menus">
-              Menus
-            </Button>
             <Button variant="subtle" component={Link} to="/meal-plans">
               Meal Plans
             </Button>
-            <Button variant="subtle" component={Link} to="/ingredients">
-              Ingredients
-            </Button>
             <Button variant="subtle" component={Link} to="/staple-groups">
-              Staple Groups
+              Staples
             </Button>
-            <Button variant="subtle" component={Link} to="/stores">
-              Stores
-            </Button>
-            <Button variant="subtle" component={Link} to="/backup">
-              Backup
-            </Button>
-            <Button variant="subtle" component={Link} to="/help">
-              Help
-            </Button>
+            <Menu shadow="md" position="bottom-end">
+              <Menu.Target>
+                <Button variant="subtle">More</Button>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Item component={Link} to="/menus">
+                  Menus
+                </Menu.Item>
+                <Menu.Divider />
+                <Menu.Item component={Link} to="/ingredients">
+                  Ingredients
+                </Menu.Item>
+                <Menu.Item component={Link} to="/stores">
+                  Stores
+                </Menu.Item>
+                <Menu.Divider />
+                <Menu.Item component={Link} to="/backup">
+                  Backup
+                </Menu.Item>
+                <Menu.Item component={Link} to="/help">
+                  Help
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
           </Group>
         </Group>
       </AppShell.Header>
