@@ -46,6 +46,7 @@ export function StapleGroupDetailPage() {
         <List>
           {stapleGroup.items.map((item) => (
             <List.Item key={item.id}>
+              {item.quantity > 1 && <Text span fw={600}>{item.quantity}× </Text>}
               {item.name}
               {item.ingredientName && (
                 <Text span c="dimmed">

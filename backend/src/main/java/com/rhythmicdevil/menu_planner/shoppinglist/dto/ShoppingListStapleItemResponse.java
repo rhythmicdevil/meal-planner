@@ -4,6 +4,7 @@ public record ShoppingListStapleItemResponse(
         Long stapleItemId,
         String name,
         Long ingredientId,
-        String stapleGroupName
+        String stapleGroupName,
+        int quantity
 ) {
 }

@@ -31,6 +31,9 @@ public class StapleItem {
     @Column(name = "name", nullable = false)
     private String name;
 
+    @Column(name = "quantity", nullable = false)
+    private int quantity = 1;
+
     @ManyToOne
     @JoinColumn(name = "ingredient_id")
     private Ingredient ingredient;
@@ -69,6 +72,14 @@ public class StapleItem {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
     }
 
     public Ingredient getIngredient() {

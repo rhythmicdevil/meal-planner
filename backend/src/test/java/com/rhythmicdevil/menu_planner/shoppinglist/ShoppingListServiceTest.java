@@ -198,6 +198,19 @@ class ShoppingListServiceTest {
         assertThat(stapleItems.get(0).name()).isEqualTo("paper towels");
         assertThat(stapleItems.get(0).ingredientId()).isNull();
         assertThat(stapleItems.get(0).stapleGroupName()).isEqualTo("Paper Products");
+        assertThat(stapleItems.get(0).quantity()).isEqualTo(1);
+    }
+
+    @Test
+    void stapleItemQuantityPassesThrough() {
+        StapleItem towels = new StapleItem("paper towels", null);
+        towels.setQuantity(3);
+        StapleGroup group = stapleGroupWith("Paper Products", towels);
+
+        List<ShoppingListStapleItemResponse> stapleItems =
+                ShoppingListService.computeStapleItems(group.getItems(), List.of());
+
+        assertThat(stapleItems.get(0).quantity()).isEqualTo(3);
     }
 
     @Test

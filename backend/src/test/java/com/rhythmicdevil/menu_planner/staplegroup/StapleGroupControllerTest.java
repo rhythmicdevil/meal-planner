@@ -51,8 +51,8 @@ class StapleGroupControllerTest extends AbstractApiTest {
         Store safeway = storeRepository.save(new Store("Safeway"));
 
         StapleGroupRequest createRequest = new StapleGroupRequest("Paper Products", List.of(
-                new StapleItemRequest("paper towels", null, Set.of(costco.getId(), safeway.getId())),
-                new StapleItemRequest("bananas", bananas.getId(), null)
+                new StapleItemRequest("paper towels", null, Set.of(costco.getId(), safeway.getId()), 3),
+                new StapleItemRequest("bananas", bananas.getId(), null, null)
         ));
 
         String createResponse = mockMvc.perform(authenticated(post("/api/staple-groups"))
@@ -66,10 +66,12 @@ class StapleGroupControllerTest extends AbstractApiTest {
                 .andExpect(jsonPath("$.items[0].stores.length()").value(2))
                 .andExpect(jsonPath("$.items[0].stores[0].name").value("Costco"))
                 .andExpect(jsonPath("$.items[0].stores[1].name").value("Safeway"))
+                .andExpect(jsonPath("$.items[0].quantity").value(3))
                 .andExpect(jsonPath("$.items[1].name").value("bananas"))
                 .andExpect(jsonPath("$.items[1].ingredientId").value(bananas.getId()))
                 .andExpect(jsonPath("$.items[1].ingredientName").value("bananas"))
                 .andExpect(jsonPath("$.items[1].stores.length()").value(0))
+                .andExpect(jsonPath("$.items[1].quantity").value(1))
                 .andReturn().getResponse().getContentAsString();
 
         Long groupId = objectMapper.readTree(createResponse).get("id").asLong();
@@ -80,7 +82,7 @@ class StapleGroupControllerTest extends AbstractApiTest {
 
         // replace the items wholesale with just one, unlinked
         StapleGroupRequest updateRequest = new StapleGroupRequest("Paper Products",
-                List.of(new StapleItemRequest("napkins", null, null)));
+                List.of(new StapleItemRequest("napkins", null, null, null)));
 
         mockMvc.perform(authenticated(put("/api/staple-groups/" + groupId))
                         .contentType("application/json")
@@ -99,7 +101,7 @@ class StapleGroupControllerTest extends AbstractApiTest {
     @Test
     void createWithUnknownIngredient_isNotFound() throws Exception {
         StapleGroupRequest request = new StapleGroupRequest("Ghost Group",
-                List.of(new StapleItemRequest("mystery item", 999999L, null)));
+                List.of(new StapleItemRequest("mystery item", 999999L, null, null)));
 
         mockMvc.perform(authenticated(post("/api/staple-groups"))
                         .contentType("application/json")

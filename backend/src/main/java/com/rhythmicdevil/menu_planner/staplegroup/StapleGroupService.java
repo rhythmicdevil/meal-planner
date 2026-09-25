@@ -83,6 +83,7 @@ public class StapleGroupService {
                     .orElseThrow(() -> new EntityNotFoundException("Ingredient " + request.ingredientId() + " not found"));
         }
         StapleItem item = new StapleItem(request.name(), ingredient);
+        item.setQuantity(request.quantity() != null && request.quantity() >= 1 ? request.quantity() : 1);
 
         Set<Long> storeIds = request.storeIds() != null ? request.storeIds() : Set.of();
         Set<Store> stores = new HashSet<>(storeRepository.findAllById(storeIds));

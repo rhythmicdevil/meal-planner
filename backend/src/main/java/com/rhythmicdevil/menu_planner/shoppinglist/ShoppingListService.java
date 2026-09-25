@@ -169,7 +169,8 @@ public class ShoppingListService {
                     stapleItem.getId(),
                     stapleItem.getName(),
                     ingredientId,
-                    stapleItem.getStapleGroup().getName()
+                    stapleItem.getStapleGroup().getName(),
+                    stapleItem.getQuantity()
             ));
         }
 

@@ -211,12 +211,14 @@ export interface StapleItem {
   ingredientId: number | null
   ingredientName: string | null
   stores: Store[]
+  quantity: number
 }
 
 export interface StapleItemRequest {
   name: string
   ingredientId?: number | null
   storeIds?: number[]
+  quantity?: number | null
 }
 
 export interface StapleGroup {
@@ -277,6 +279,7 @@ export interface ShoppingListStapleItem {
   name: string
   ingredientId: number | null
   stapleGroupName: string
+  quantity: number
 }
 
 export interface ShoppingList {

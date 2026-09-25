@@ -7,6 +7,7 @@ import java.util.Set;
 public record StapleItemRequest(
         @NotBlank String name,
         Long ingredientId,
-        Set<Long> storeIds
+        Set<Long> storeIds,
+        Integer quantity
 ) {
 }

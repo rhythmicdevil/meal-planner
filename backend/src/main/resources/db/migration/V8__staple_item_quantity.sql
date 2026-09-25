@@ -1,0 +1,2 @@
+ALTER TABLE staple_item
+    ADD COLUMN quantity INT NOT NULL DEFAULT 1;

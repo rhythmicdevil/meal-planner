@@ -1,6 +1,18 @@
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Button, Group, LoadingOverlay, MultiSelect, Paper, Select, Stack, TextInput, Title } from '@mantine/core'
+import {
+  Button,
+  Grid,
+  Group,
+  LoadingOverlay,
+  MultiSelect,
+  NumberInput,
+  Paper,
+  Select,
+  Stack,
+  TextInput,
+  Title,
+} from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { ApiRequestError } from '../api/client'
@@ -28,6 +40,7 @@ export function StapleGroupFormPage() {
       name: (value) => (value.trim() ? null : 'Name is required'),
       items: {
         name: (value) => (value.trim() ? null : 'Name is required'),
+        quantity: (value) => (value >= 1 ? null : 'Must be at least 1'),
       },
     },
   })
@@ -40,6 +53,7 @@ export function StapleGroupFormPage() {
         name: item.name,
         ingredientId: item.ingredientId,
         storeIds: item.stores.map((store) => store.id),
+        quantity: item.quantity,
       })),
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -62,6 +76,7 @@ export function StapleGroupFormPage() {
         name: row.name.trim(),
         ingredientId: row.ingredientId,
         storeIds: row.storeIds,
+        quantity: row.quantity,
       })),
     }
 
@@ -98,54 +113,63 @@ export function StapleGroupFormPage() {
           <Stack>
             {form.values.items.map((row, index) => (
               <Paper key={index} withBorder p="sm">
-                <Group align="flex-start" wrap="wrap">
-                  <TextInput
-                    style={{ flex: 1, minWidth: 160 }}
-                    label="Name"
-                    placeholder="e.g. paper towels"
-                    {...form.getInputProps(`items.${index}.name`)}
-                  />
-                  <Select
-                    style={{ flex: 1, minWidth: 160 }}
-                    label="Link to an ingredient (optional)"
-                    placeholder="Search ingredients…"
-                    searchable
-                    clearable
-                    data={ingredientOptions}
-                    value={row.ingredientId !== null ? String(row.ingredientId) : null}
-                    onChange={(value) => {
-                      const ingredientId = value ? Number(value) : null
-                      form.setFieldValue(`items.${index}.ingredientId`, ingredientId)
-                      // Auto-fill the name from the linked ingredient, but only if nothing's
-                      // been typed yet -- never clobber a deliberately different label.
-                      if (ingredientId !== null && !form.values.items[index].name.trim()) {
-                        const ingredient = ingredients.find((i) => i.id === ingredientId)
-                        if (ingredient) {
-                          form.setFieldValue(`items.${index}.name`, ingredient.name)
+                <Grid gap="sm" align="flex-end">
+                  <Grid.Col span={{ base: 8, sm: 5 }}>
+                    <TextInput
+                      label="Name"
+                      placeholder="e.g. paper towels"
+                      {...form.getInputProps(`items.${index}.name`)}
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 4, sm: 2 }}>
+                    <NumberInput label="Qty" min={1} {...form.getInputProps(`items.${index}.quantity`)} />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 5 }}>
+                    <Group justify="flex-end">
+                      <Button
+                        color="red"
+                        variant="subtle"
+                        type="button"
+                        onClick={() => form.removeListItem('items', index)}
+                      >
+                        Remove
+                      </Button>
+                    </Group>
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                    <Select
+                      label="Link to an ingredient (optional)"
+                      placeholder="Search ingredients…"
+                      searchable
+                      clearable
+                      data={ingredientOptions}
+                      value={row.ingredientId !== null ? String(row.ingredientId) : null}
+                      onChange={(value) => {
+                        const ingredientId = value ? Number(value) : null
+                        form.setFieldValue(`items.${index}.ingredientId`, ingredientId)
+                        // Auto-fill the name from the linked ingredient, but only if nothing's
+                        // been typed yet -- never clobber a deliberately different label.
+                        if (ingredientId !== null && !form.values.items[index].name.trim()) {
+                          const ingredient = ingredients.find((i) => i.id === ingredientId)
+                          if (ingredient) {
+                            form.setFieldValue(`items.${index}.name`, ingredient.name)
+                          }
                         }
-                      }
-                    }}
-                  />
-                  <MultiSelect
-                    style={{ flex: 1, minWidth: 160 }}
-                    label="Stores (optional)"
-                    placeholder="Where to get it…"
-                    searchable
-                    clearable
-                    data={storeOptions}
-                    value={row.storeIds.map(String)}
-                    onChange={(values) => form.setFieldValue(`items.${index}.storeIds`, values.map(Number))}
-                  />
-                  <Button
-                    color="red"
-                    variant="subtle"
-                    type="button"
-                    mt={24}
-                    onClick={() => form.removeListItem('items', index)}
-                  >
-                    Remove
-                  </Button>
-                </Group>
+                      }}
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                    <MultiSelect
+                      label="Stores (optional)"
+                      placeholder="Where to get it…"
+                      searchable
+                      clearable
+                      data={storeOptions}
+                      value={row.storeIds.map(String)}
+                      onChange={(values) => form.setFieldValue(`items.${index}.storeIds`, values.map(Number))}
+                    />
+                  </Grid.Col>
+                </Grid>
               </Paper>
             ))}
             <Button variant="light" type="button" onClick={() => form.insertListItem('items', emptyStapleItemRow())}>

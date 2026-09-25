@@ -145,7 +145,7 @@ export function ShoppingListPage() {
                             opacity: isChecked ? 0.5 : 1,
                           }}
                         >
-                          {item.name}
+                          {item.quantity > 1 ? `${item.quantity} ${item.name}` : item.name}
                         </UnstyledButton>
                       </List.Item>
                     )

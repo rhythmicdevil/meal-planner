@@ -11,7 +11,8 @@ public record StapleItemResponse(
         String name,
         Long ingredientId,
         String ingredientName,
-        List<StoreResponse> stores
+        List<StoreResponse> stores,
+        int quantity
 ) {
     public static StapleItemResponse from(StapleItem item) {
         return new StapleItemResponse(
@@ -22,7 +23,8 @@ public record StapleItemResponse(
                 item.getStores().stream()
                         .map(StoreResponse::from)
                         .sorted(Comparator.comparing(StoreResponse::name))
-                        .toList()
+                        .toList(),
+                item.getQuantity()
         );
     }
 }
