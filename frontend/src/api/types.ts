@@ -272,12 +272,12 @@ export interface ShoppingListItem {
   unit: string | null
   toTaste: boolean
   sourceRecipes: RecipeSummary[]
+  stapleGroupName: string | null
 }
 
 export interface ShoppingListStapleItem {
   stapleItemId: number
   name: string
-  ingredientId: number | null
   stapleGroupName: string
   quantity: number
 }

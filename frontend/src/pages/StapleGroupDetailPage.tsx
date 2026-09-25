@@ -48,12 +48,6 @@ export function StapleGroupDetailPage() {
             <List.Item key={item.id}>
               {item.quantity > 1 && <Text span fw={600}>{item.quantity}× </Text>}
               {item.name}
-              {item.ingredientName && (
-                <Text span c="dimmed">
-                  {' '}
-                  — linked to {item.ingredientName}
-                </Text>
-              )}
               {item.stores.length > 0 && (
                 <Text span c="dimmed">
                   {' '}

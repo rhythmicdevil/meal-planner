@@ -13,6 +13,7 @@ public record ShoppingListItemResponse(
         BigDecimal totalAmount,
         String unit,
         boolean toTaste,
-        List<RecipeSummary> sourceRecipes
+        List<RecipeSummary> sourceRecipes,
+        String stapleGroupName
 ) {
 }

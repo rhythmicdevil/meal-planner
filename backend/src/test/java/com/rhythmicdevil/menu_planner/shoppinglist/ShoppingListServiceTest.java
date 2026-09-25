@@ -176,7 +176,11 @@ class ShoppingListServiceTest {
     // hand-built, never-persisted entities) -- give these a real id via reflection so that
     // logic actually gets exercised.
     private static Ingredient ingredientWithId(long id, String name) {
-        Ingredient ingredient = ingredient(name);
+        return ingredientWithId(id, name, IngredientCategory.OTHER);
+    }
+
+    private static Ingredient ingredientWithId(long id, String name, IngredientCategory category) {
+        Ingredient ingredient = ingredient(name, category);
         ReflectionTestUtils.setField(ingredient, "id", id);
         return ingredient;
     }
@@ -188,72 +192,82 @@ class ShoppingListServiceTest {
     }
 
     @Test
-    void unlinkedStapleItemAlwaysShowsUp() {
+    void unlinkedStapleItemAlwaysShowsUpInTheHouseholdList() {
         StapleGroup group = stapleGroupWith("Paper Products", new StapleItem("paper towels", null));
 
-        List<ShoppingListStapleItemResponse> stapleItems =
-                ShoppingListService.computeStapleItems(group.getItems(), List.of());
+        List<ShoppingListStapleItemResponse> householdItems = ShoppingListService.computeStapleItems(group.getItems());
 
-        assertThat(stapleItems).hasSize(1);
-        assertThat(stapleItems.get(0).name()).isEqualTo("paper towels");
-        assertThat(stapleItems.get(0).ingredientId()).isNull();
-        assertThat(stapleItems.get(0).stapleGroupName()).isEqualTo("Paper Products");
-        assertThat(stapleItems.get(0).quantity()).isEqualTo(1);
+        assertThat(householdItems).hasSize(1);
+        assertThat(householdItems.get(0).name()).isEqualTo("paper towels");
+        assertThat(householdItems.get(0).stapleGroupName()).isEqualTo("Paper Products");
+        assertThat(householdItems.get(0).quantity()).isEqualTo(1);
     }
 
     @Test
-    void stapleItemQuantityPassesThrough() {
+    void householdStapleItemQuantityPassesThrough() {
         StapleItem towels = new StapleItem("paper towels", null);
         towels.setQuantity(3);
         StapleGroup group = stapleGroupWith("Paper Products", towels);
 
-        List<ShoppingListStapleItemResponse> stapleItems =
-                ShoppingListService.computeStapleItems(group.getItems(), List.of());
+        List<ShoppingListStapleItemResponse> householdItems = ShoppingListService.computeStapleItems(group.getItems());
 
-        assertThat(stapleItems.get(0).quantity()).isEqualTo(3);
+        assertThat(householdItems.get(0).quantity()).isEqualTo(3);
     }
 
     @Test
-    void linkedStapleItemShowsUpWhenItsIngredientIsntNeededByAnyRecipeThisWeek() {
-        Ingredient bananas = ingredientWithId(1L, "bananas");
-        StapleGroup group = stapleGroupWith("Kitchen", new StapleItem("bananas", bananas));
+    void dedupesHouseholdStapleItemsAgainstEachOtherByName() {
+        StapleGroup cleaning = stapleGroupWith("Cleaning",
+                new StapleItem("sponges", null), new StapleItem("Sponges", null));
 
-        List<ShoppingListStapleItemResponse> stapleItems =
-                ShoppingListService.computeStapleItems(group.getItems(), List.of());
+        List<ShoppingListStapleItemResponse> householdItems = ShoppingListService.computeStapleItems(cleaning.getItems());
 
-        assertThat(stapleItems).hasSize(1);
-        assertThat(stapleItems.get(0).ingredientId()).isEqualTo(bananas.getId());
+        assertThat(householdItems).extracting(ShoppingListStapleItemResponse::name).containsExactly("sponges");
     }
 
     @Test
-    void linkedStapleItemIsSuppressedWhenARecipeAlreadyNeedsItThisWeek() {
+    void foodStapleItemMergesIntoTheMainListUnderItsIngredientsCategory() {
+        Ingredient bananas = ingredientWithId(1L, "bananas", IngredientCategory.PRODUCE);
+        StapleItem staple = new StapleItem("bananas", bananas);
+        staple.setQuantity(2);
+        StapleGroup group = stapleGroupWith("Kitchen", staple);
+
+        List<ShoppingListItemResponse> items = ShoppingListService.mergeFoodStapleItems(List.of(), group.getItems());
+
+        assertThat(items).hasSize(1);
+        ShoppingListItemResponse item = items.get(0);
+        assertThat(item.ingredientName()).isEqualTo("bananas");
+        assertThat(item.category()).isEqualTo(IngredientCategory.PRODUCE);
+        assertThat(item.totalAmount()).isEqualByComparingTo("2");
+        assertThat(item.unit()).isNull();
+        assertThat(item.sourceRecipes()).isEmpty();
+        assertThat(item.stapleGroupName()).isEqualTo("Kitchen");
+    }
+
+    @Test
+    void foodStapleItemIsSuppressedWhenARecipeAlreadyNeedsItThisWeek() {
         Ingredient bananas = ingredientWithId(1L, "bananas");
         Recipe smoothie = recipeWith("Smoothie", rawLine(bananas, "2", "each"));
         List<ShoppingListItemResponse> recipeItems = ShoppingListService.computeItems(List.of(smoothie));
 
         StapleGroup group = stapleGroupWith("Kitchen", new StapleItem("bananas", bananas));
-        List<ShoppingListStapleItemResponse> stapleItems =
-                ShoppingListService.computeStapleItems(group.getItems(), recipeItems);
+        List<ShoppingListItemResponse> merged = ShoppingListService.mergeFoodStapleItems(recipeItems, group.getItems());
 
-        assertThat(stapleItems).isEmpty();
+        assertThat(merged).hasSize(1);
+        assertThat(merged.get(0).stapleGroupName()).isNull(); // still the recipe-derived line, untouched
     }
 
     @Test
-    void dedupesStapleItemsAgainstEachOtherByIngredientOrByName() {
+    void dedupesFoodStapleItemsAgainstEachOtherByIngredient() {
         Ingredient bananas = ingredientWithId(1L, "bananas");
         StapleGroup kitchen = stapleGroupWith("Kitchen", new StapleItem("bananas", bananas));
         StapleGroup produce = stapleGroupWith("Produce", new StapleItem("bananas", bananas));
-        StapleGroup cleaning = stapleGroupWith("Cleaning",
-                new StapleItem("sponges", null), new StapleItem("Sponges", null));
 
         List<StapleItem> allItems = new ArrayList<>();
         allItems.addAll(kitchen.getItems());
         allItems.addAll(produce.getItems());
-        allItems.addAll(cleaning.getItems());
 
-        List<ShoppingListStapleItemResponse> stapleItems = ShoppingListService.computeStapleItems(allItems, List.of());
+        List<ShoppingListItemResponse> merged = ShoppingListService.mergeFoodStapleItems(List.of(), allItems);
 
-        assertThat(stapleItems).extracting(ShoppingListStapleItemResponse::name)
-                .containsExactlyInAnyOrder("bananas", "sponges");
+        assertThat(merged).hasSize(1);
     }
 }

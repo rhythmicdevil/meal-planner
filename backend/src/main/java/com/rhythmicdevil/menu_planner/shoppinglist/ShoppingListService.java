@@ -41,9 +41,13 @@ public class ShoppingListService {
         MealPlan mealPlan = mealPlanRepository.findById(mealPlanId)
                 .orElseThrow(() -> new EntityNotFoundException("MealPlan " + mealPlanId + " not found"));
         List<Recipe> recipes = mealPlan.flattenRecipes();
-        List<ShoppingListItemResponse> items = computeItems(recipes);
-        List<ShoppingListStapleItemResponse> stapleItems = computeStapleItems(mealPlan.flattenStapleItems(), items);
-        return new ShoppingListResponse(mealPlanId, items, stapleItems);
+        List<StapleItem> stapleItems = mealPlan.flattenStapleItems();
+
+        List<ShoppingListItemResponse> items = mergeFoodStapleItems(computeItems(recipes), stapleItems);
+        List<StapleItem> unlinkedStapleItems = stapleItems.stream().filter(s -> s.getIngredient() == null).toList();
+        List<ShoppingListStapleItemResponse> householdItems = computeStapleItems(unlinkedStapleItems);
+
+        return new ShoppingListResponse(mealPlanId, items, householdItems);
     }
 
     // Keyed by Ingredient reference (not id) -- within one Hibernate session the same
@@ -115,7 +119,8 @@ public class ShoppingListService {
                     displayAmount,
                     bucket.displayUnit,
                     false,
-                    bucket.sourceRecipes.stream().map(RecipeSummary::from).toList()
+                    bucket.sourceRecipes.stream().map(RecipeSummary::from).toList(),
+                    null
             ));
         }
 
@@ -128,7 +133,8 @@ public class ShoppingListService {
                     null,
                     null,
                     true,
-                    entry.getValue().stream().map(RecipeSummary::from).toList()
+                    entry.getValue().stream().map(RecipeSummary::from).toList(),
+                    null
             ));
         }
 
@@ -139,28 +145,52 @@ public class ShoppingListService {
         return items;
     }
 
-    // A staple item linked to an ingredient that's already needed for a recipe this week is
-    // suppressed (the recipe-derived line already covers buying it) rather than shown twice;
-    // staple items are also deduped against each other, by ingredient when linked or by name
-    // when not.
-    static List<ShoppingListStapleItemResponse> computeStapleItems(
-            List<StapleItem> stapleItems, List<ShoppingListItemResponse> recipeItems) {
+    // A staple item linked to an ingredient is real grocery-list food -- not there to avoid
+    // duplicating a recipe's ingredient, but because it otherwise has no way to appear on the
+    // list at all. It's folded into the same category-grouped list a recipe ingredient would
+    // land in, so it gets the same aisle-order walkability. If a recipe (or an earlier staple
+    // item in this same pass) already covers that ingredient, this one is skipped rather than
+    // shown as a redundant second line.
+    static List<ShoppingListItemResponse> mergeFoodStapleItems(
+            List<ShoppingListItemResponse> recipeItems, List<StapleItem> stapleItems) {
         Set<Long> ingredientIdsAlreadyListed = new HashSet<>();
         for (ShoppingListItemResponse item : recipeItems) {
             ingredientIdsAlreadyListed.add(item.ingredientId());
         }
 
-        List<ShoppingListStapleItemResponse> result = new ArrayList<>();
-        Set<Object> seen = new HashSet<>();
+        List<ShoppingListItemResponse> merged = new ArrayList<>(recipeItems);
 
         for (StapleItem stapleItem : stapleItems) {
-            Long ingredientId = stapleItem.getIngredient() != null ? stapleItem.getIngredient().getId() : null;
-
-            if (ingredientId != null && ingredientIdsAlreadyListed.contains(ingredientId)) {
+            Ingredient ingredient = stapleItem.getIngredient();
+            if (ingredient == null || !ingredientIdsAlreadyListed.add(ingredient.getId())) {
                 continue;
             }
 
-            Object dedupeKey = ingredientId != null ? ingredientId : stapleItem.getName().trim().toLowerCase();
+            merged.add(new ShoppingListItemResponse(
+                    ingredient.getId(),
+                    ingredient.getName(),
+                    ingredient.getCategory(),
+                    BigDecimal.valueOf(stapleItem.getQuantity()),
+                    null,
+                    false,
+                    List.of(),
+                    stapleItem.getStapleGroup().getName()
+            ));
+        }
+
+        merged.sort(Comparator.comparing(ShoppingListItemResponse::category)
+                .thenComparing(ShoppingListItemResponse::ingredientName, String.CASE_INSENSITIVE_ORDER));
+        return merged;
+    }
+
+    // Household (unlinked) staple items have no ingredient/category to sort by, so they stay
+    // in their own list grouped by staple group name; deduped against each other by name.
+    static List<ShoppingListStapleItemResponse> computeStapleItems(List<StapleItem> stapleItems) {
+        List<ShoppingListStapleItemResponse> result = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+
+        for (StapleItem stapleItem : stapleItems) {
+            String dedupeKey = stapleItem.getName().trim().toLowerCase();
             if (!seen.add(dedupeKey)) {
                 continue;
             }
@@ -168,7 +198,6 @@ public class ShoppingListService {
             result.add(new ShoppingListStapleItemResponse(
                     stapleItem.getId(),
                     stapleItem.getName(),
-                    ingredientId,
                     stapleItem.getStapleGroup().getName(),
                     stapleItem.getQuantity()
             ));

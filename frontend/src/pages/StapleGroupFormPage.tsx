@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   Button,
@@ -8,7 +8,7 @@ import {
   MultiSelect,
   NumberInput,
   Paper,
-  Select,
+  SegmentedControl,
   Stack,
   TextInput,
   Title,
@@ -20,6 +20,7 @@ import { useIngredients } from '../api/ingredients'
 import { useCreateStapleGroup, useStapleGroup, useUpdateStapleGroup } from '../api/stapleGroups'
 import { useStores } from '../api/stores'
 import type { StapleGroupRequest } from '../api/types'
+import { AddIngredientModal } from '../components/AddIngredientModal'
 import { emptyStapleGroupFormValues, emptyStapleItemRow, type StapleGroupFormValues } from '../types/stapleGroupForm'
 
 export function StapleGroupFormPage() {
@@ -32,6 +33,9 @@ export function StapleGroupFormPage() {
   const { data: stores = [] } = useStores()
   const createStapleGroup = useCreateStapleGroup()
   const updateStapleGroup = useUpdateStapleGroup(id ?? '')
+  // Index of the item row whose "Food" toggle triggered a catalog lookup that found no
+  // match -- drives the Add Ingredient dialog. Only one row can be mid-lookup at a time.
+  const [pendingFoodRow, setPendingFoodRow] = useState<number | null>(null)
 
   const form = useForm<StapleGroupFormValues>({
     mode: 'controlled',
@@ -52,6 +56,7 @@ export function StapleGroupFormPage() {
       items: existing.items.map((item) => ({
         name: item.name,
         ingredientId: item.ingredientId,
+        isFood: item.ingredientId !== null,
         storeIds: item.stores.map((store) => store.id),
         quantity: item.quantity,
       })),
@@ -60,10 +65,6 @@ export function StapleGroupFormPage() {
   }, [existing])
 
   const isSaving = createStapleGroup.isPending || updateStapleGroup.isPending
-
-  const ingredientOptions = ingredients
-    .map((ingredient) => ({ value: String(ingredient.id), label: ingredient.name }))
-    .sort((a, b) => a.label.localeCompare(b.label))
 
   const storeOptions = stores
     .map((store) => ({ value: String(store.id), label: store.name }))
@@ -136,29 +137,39 @@ export function StapleGroupFormPage() {
                       </Button>
                     </Group>
                   </Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 6 }}>
-                    <Select
-                      label="Link to an ingredient (optional)"
-                      placeholder="Search ingredients…"
-                      searchable
-                      clearable
-                      data={ingredientOptions}
-                      value={row.ingredientId !== null ? String(row.ingredientId) : null}
+                  <Grid.Col span={{ base: 12, sm: 4 }}>
+                    <SegmentedControl
+                      fullWidth
+                      data={[
+                        { label: 'Household', value: 'household' },
+                        { label: 'Food', value: 'food' },
+                      ]}
+                      value={row.isFood ? 'food' : 'household'}
                       onChange={(value) => {
-                        const ingredientId = value ? Number(value) : null
-                        form.setFieldValue(`items.${index}.ingredientId`, ingredientId)
-                        // Auto-fill the name from the linked ingredient, but only if nothing's
-                        // been typed yet -- never clobber a deliberately different label.
-                        if (ingredientId !== null && !form.values.items[index].name.trim()) {
-                          const ingredient = ingredients.find((i) => i.id === ingredientId)
-                          if (ingredient) {
-                            form.setFieldValue(`items.${index}.name`, ingredient.name)
-                          }
+                        const isFood = value === 'food'
+                        form.setFieldValue(`items.${index}.isFood`, isFood)
+
+                        if (!isFood) {
+                          form.setFieldValue(`items.${index}.ingredientId`, null)
+                          return
+                        }
+
+                        // Switching to Food: silently link a matching catalog ingredient if
+                        // one exists (by exact name, case-insensitive); otherwise send the
+                        // user straight to creating one instead of showing a search field.
+                        const name = row.name.trim()
+                        if (!name) return
+                        const match = ingredients.find((i) => i.name.toLowerCase() === name.toLowerCase())
+                        if (match) {
+                          form.setFieldValue(`items.${index}.ingredientId`, match.id)
+                          form.setFieldValue(`items.${index}.name`, match.name)
+                        } else {
+                          setPendingFoodRow(index)
                         }
                       }}
                     />
                   </Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                  <Grid.Col span={{ base: 12, sm: 8 }}>
                     <MultiSelect
                       label="Stores (optional)"
                       placeholder="Where to get it…"
@@ -187,6 +198,26 @@ export function StapleGroupFormPage() {
           </Group>
         </Stack>
       </form>
+
+      <AddIngredientModal
+        opened={pendingFoodRow !== null}
+        initialName={pendingFoodRow !== null ? form.values.items[pendingFoodRow]?.name.trim() : ''}
+        onClose={() => {
+          // Abandoning the dialog leaves nothing to link -- fall back to Household rather
+          // than leaving the row toggled to Food with no ingredient behind it.
+          if (pendingFoodRow !== null && form.values.items[pendingFoodRow]?.ingredientId === null) {
+            form.setFieldValue(`items.${pendingFoodRow}.isFood`, false)
+          }
+          setPendingFoodRow(null)
+        }}
+        onCreated={(created) => {
+          if (pendingFoodRow !== null) {
+            form.setFieldValue(`items.${pendingFoodRow}.ingredientId`, created.id)
+            form.setFieldValue(`items.${pendingFoodRow}.name`, created.name)
+          }
+          setPendingFoodRow(null)
+        }}
+      />
     </Stack>
   )
 }

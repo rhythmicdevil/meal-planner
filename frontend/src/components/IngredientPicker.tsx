@@ -1,62 +1,25 @@
 import { useState } from 'react'
-import { Button, Group, Modal, Select, Stack, TextInput } from '@mantine/core'
-import { useForm } from '@mantine/form'
-import { notifications } from '@mantine/notifications'
-import { ApiRequestError } from '../api/client'
-import { useCreateIngredient, useIngredients } from '../api/ingredients'
-import { INGREDIENT_CATEGORIES, INGREDIENT_CATEGORY_LABELS, type IngredientCategory } from '../api/types'
+import { Button, Group, Select } from '@mantine/core'
+import { useIngredients } from '../api/ingredients'
+import type { Ingredient } from '../api/types'
+import { AddIngredientModal } from './AddIngredientModal'
 
 interface IngredientPickerProps {
   value: number | null
-  onChange: (id: number | null) => void
+  onChange: (id: number | null, ingredient?: Ingredient) => void
   error?: React.ReactNode
-}
-
-interface QuickAddValues {
-  name: string
-  category: IngredientCategory | null
-  defaultUnit: string
 }
 
 export function IngredientPicker({ value, onChange, error }: IngredientPickerProps) {
   const { data: ingredients = [], isLoading } = useIngredients()
-  const createIngredient = useCreateIngredient()
   const [modalOpen, setModalOpen] = useState(false)
-
-  const quickAddForm = useForm<QuickAddValues>({
-    mode: 'controlled',
-    initialValues: { name: '', category: null, defaultUnit: '' },
-    validate: {
-      name: (v) => (v.trim() ? null : 'Name is required'),
-      category: (v) => (v ? null : 'Category is required'),
-    },
-  })
+  // Tracks what the user has typed into the search box so "+ New" can carry it over as a
+  // starting point for the quick-add name, instead of making them retype it.
+  const [searchValue, setSearchValue] = useState('')
 
   const options = ingredients
     .map((ingredient) => ({ value: String(ingredient.id), label: ingredient.name }))
     .sort((a, b) => a.label.localeCompare(b.label))
-
-  const handleQuickAdd = quickAddForm.onSubmit(async (values) => {
-    try {
-      const created = await createIngredient.mutateAsync({
-        name: values.name.trim(),
-        category: values.category as IngredientCategory,
-        defaultUnit: values.defaultUnit.trim() || null,
-      })
-      onChange(created.id)
-      setModalOpen(false)
-      quickAddForm.reset()
-    } catch (err) {
-      if (err instanceof ApiRequestError) {
-        if (err.fieldErrors) {
-          quickAddForm.setErrors(err.fieldErrors)
-        }
-        notifications.show({ message: err.message, color: 'red' })
-      } else {
-        notifications.show({ message: 'Something went wrong', color: 'red' })
-      }
-    }
-  })
 
   return (
     <>
@@ -69,7 +32,11 @@ export function IngredientPicker({ value, onChange, error }: IngredientPickerPro
           clearable
           data={options}
           value={value !== null ? String(value) : null}
-          onChange={(v) => onChange(v ? Number(v) : null)}
+          onChange={(v) => {
+            const id = v ? Number(v) : null
+            onChange(id, id !== null ? ingredients.find((i) => i.id === id) : undefined)
+          }}
+          onSearchChange={setSearchValue}
           error={error}
           nothingFoundMessage="No ingredients found"
         />
@@ -77,39 +44,26 @@ export function IngredientPicker({ value, onChange, error }: IngredientPickerPro
             auto-create, or a previously-saved recipe -- there's nothing left for quick-add
             to resolve; it only reappears if the selection is cleared back to empty. */}
         {value === null && (
-          <Button variant="light" onClick={() => setModalOpen(true)} type="button">
+          <Button
+            variant="light"
+            type="button"
+            onClick={() => setModalOpen(true)}
+          >
             + New
           </Button>
         )}
       </Group>
 
-      <Modal opened={modalOpen} onClose={() => setModalOpen(false)} title="Add ingredient">
-        <form onSubmit={handleQuickAdd}>
-          <Stack>
-            <TextInput label="Name" required {...quickAddForm.getInputProps('name')} />
-            <Select
-              label="Category"
-              required
-              data={INGREDIENT_CATEGORIES.map((category) => ({
-                value: category,
-                label: INGREDIENT_CATEGORY_LABELS[category],
-              }))}
-              searchable
-              {...quickAddForm.getInputProps('category')}
-            />
-            <TextInput
-              label="Default unit"
-              placeholder="e.g. each, g"
-              {...quickAddForm.getInputProps('defaultUnit')}
-            />
-            <Group justify="flex-end">
-              <Button type="submit" loading={createIngredient.isPending}>
-                Add ingredient
-              </Button>
-            </Group>
-          </Stack>
-        </form>
-      </Modal>
+      <AddIngredientModal
+        opened={modalOpen}
+        onClose={() => setModalOpen(false)}
+        initialName={searchValue.trim()}
+        onCreated={(created) => {
+          onChange(created.id, created)
+          setModalOpen(false)
+          setSearchValue('')
+        }}
+      />
     </>
   )
 }

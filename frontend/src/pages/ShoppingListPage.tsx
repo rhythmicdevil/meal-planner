@@ -105,11 +105,14 @@ export function ShoppingListPage() {
                           </>
                         ) : (
                           <>
-                            {item.totalAmount} {item.unit} {item.ingredientName}
+                            {item.totalAmount}
+                            {item.unit ? ` ${item.unit}` : ''} {item.ingredientName}
                           </>
                         )}
                         <Text size="sm" c="dimmed">
-                          {item.sourceRecipes.map((recipe) => recipe.name).join(', ')}
+                          {item.stapleGroupName
+                            ? `From your staples: ${item.stapleGroupName}`
+                            : item.sourceRecipes.map((recipe) => recipe.name).join(', ')}
                         </Text>
                       </UnstyledButton>
                     </List.Item>
