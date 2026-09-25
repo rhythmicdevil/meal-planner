@@ -25,6 +25,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -41,11 +42,12 @@ public class ShoppingListService {
         MealPlan mealPlan = mealPlanRepository.findById(mealPlanId)
                 .orElseThrow(() -> new EntityNotFoundException("MealPlan " + mealPlanId + " not found"));
         List<Recipe> recipes = mealPlan.flattenRecipes();
-        List<StapleItem> stapleItems = mealPlan.flattenStapleItems();
+        Map<Boolean, List<StapleItem>> stapleItemsByLinked = mealPlan.flattenStapleItems().stream()
+                .collect(Collectors.partitioningBy(s -> s.getIngredient() != null));
 
-        List<ShoppingListItemResponse> items = mergeFoodStapleItems(computeItems(recipes), stapleItems);
-        List<StapleItem> unlinkedStapleItems = stapleItems.stream().filter(s -> s.getIngredient() == null).toList();
-        List<ShoppingListStapleItemResponse> householdItems = computeStapleItems(unlinkedStapleItems);
+        List<ShoppingListItemResponse> items =
+                mergeFoodStapleItems(computeItems(recipes), stapleItemsByLinked.get(true));
+        List<ShoppingListStapleItemResponse> householdItems = computeStapleItems(stapleItemsByLinked.get(false));
 
         return new ShoppingListResponse(mealPlanId, items, householdItems);
     }
@@ -151,6 +153,9 @@ public class ShoppingListService {
     // land in, so it gets the same aisle-order walkability. If a recipe (or an earlier staple
     // item in this same pass) already covers that ingredient, this one is skipped rather than
     // shown as a redundant second line.
+    //
+    // stapleItems here is expected to already be filtered to ones with a non-null ingredient
+    // (see generate()) -- household (unlinked) staples go through computeStapleItems instead.
     static List<ShoppingListItemResponse> mergeFoodStapleItems(
             List<ShoppingListItemResponse> recipeItems, List<StapleItem> stapleItems) {
         Set<Long> ingredientIdsAlreadyListed = new HashSet<>();
@@ -162,7 +167,7 @@ public class ShoppingListService {
 
         for (StapleItem stapleItem : stapleItems) {
             Ingredient ingredient = stapleItem.getIngredient();
-            if (ingredient == null || !ingredientIdsAlreadyListed.add(ingredient.getId())) {
+            if (!ingredientIdsAlreadyListed.add(ingredient.getId())) {
                 continue;
             }
 

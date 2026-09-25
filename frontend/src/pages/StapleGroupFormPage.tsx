@@ -157,9 +157,11 @@ export function StapleGroupFormPage() {
                         // Switching to Food: silently link a matching catalog ingredient if
                         // one exists (by exact name, case-insensitive); otherwise send the
                         // user straight to creating one instead of showing a search field.
+                        // Even with no name typed yet, still open the dialog rather than
+                        // leaving the row toggled to Food with nothing linked -- the name
+                        // field's onChange has no way to re-trigger this match later.
                         const name = row.name.trim()
-                        if (!name) return
-                        const match = ingredients.find((i) => i.name.toLowerCase() === name.toLowerCase())
+                        const match = name ? ingredients.find((i) => i.name.toLowerCase() === name.toLowerCase()) : undefined
                         if (match) {
                           form.setFieldValue(`items.${index}.ingredientId`, match.id)
                           form.setFieldValue(`items.${index}.name`, match.name)

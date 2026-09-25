@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import { Button, Group, Select } from '@mantine/core'
 import { useIngredients } from '../api/ingredients'
-import type { Ingredient } from '../api/types'
 import { AddIngredientModal } from './AddIngredientModal'
 
 interface IngredientPickerProps {
   value: number | null
-  onChange: (id: number | null, ingredient?: Ingredient) => void
+  onChange: (id: number | null) => void
   error?: React.ReactNode
 }
 
@@ -32,10 +31,7 @@ export function IngredientPicker({ value, onChange, error }: IngredientPickerPro
           clearable
           data={options}
           value={value !== null ? String(value) : null}
-          onChange={(v) => {
-            const id = v ? Number(v) : null
-            onChange(id, id !== null ? ingredients.find((i) => i.id === id) : undefined)
-          }}
+          onChange={(v) => onChange(v ? Number(v) : null)}
           onSearchChange={setSearchValue}
           error={error}
           nothingFoundMessage="No ingredients found"
@@ -59,7 +55,7 @@ export function IngredientPicker({ value, onChange, error }: IngredientPickerPro
         onClose={() => setModalOpen(false)}
         initialName={searchValue.trim()}
         onCreated={(created) => {
-          onChange(created.id, created)
+          onChange(created.id)
           setModalOpen(false)
           setSearchValue('')
         }}
