@@ -74,7 +74,7 @@ export function ShoppingListPage() {
       {shoppingList.items.length === 0 ? (
         <Text c="dimmed">Nothing to buy — no raw ingredients in this meal plan.</Text>
       ) : (
-        <div className="shopping-list-columns">
+        <div className="print-columns">
           {[...groupByCategory(shoppingList.items)].map(([category, items]) => (
             <div key={category} style={{ breakInside: 'avoid', marginBottom: 'var(--mantine-spacing-lg)' }}>
               <Title order={4} mb="xs">
@@ -127,7 +127,7 @@ export function ShoppingListPage() {
       {shoppingList.stapleItems.length > 0 && (
         <>
           <Title order={3}>Staples</Title>
-          <div className="shopping-list-columns">
+          <div className="print-columns">
             {[...groupByStapleGroupName(shoppingList.stapleItems)].map(([stapleGroupName, items]) => (
               <div key={stapleGroupName} style={{ breakInside: 'avoid', marginBottom: 'var(--mantine-spacing-lg)' }}>
                 <Title order={4} mb="xs">

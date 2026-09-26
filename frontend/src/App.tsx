@@ -11,6 +11,7 @@ import { MenuDetailPage } from './pages/MenuDetailPage'
 import { MenuFormPage } from './pages/MenuFormPage'
 import { MenuListPage } from './pages/MenuListPage'
 import { PrepListPage } from './pages/PrepListPage'
+import { RecipeBookPage } from './pages/RecipeBookPage'
 import { RecipeDetailPage } from './pages/RecipeDetailPage'
 import { RecipeFormPage } from './pages/RecipeFormPage'
 import { RecipeImportPage } from './pages/RecipeImportPage'
@@ -29,9 +30,19 @@ function App() {
         <Group h="100%" px="md" justify="space-between" className="app-header-inner">
           <Title order={3}>Meal Planner</Title>
           <Group gap="xs">
-            <Button variant="subtle" component={Link} to="/recipes">
-              Recipes
-            </Button>
+            <Menu shadow="md" position="bottom-start">
+              <Menu.Target>
+                <Button variant="subtle">Recipes</Button>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Item component={Link} to="/recipes">
+                  All Recipes
+                </Menu.Item>
+                <Menu.Item component={Link} to="/recipes/book">
+                  Recipe Book
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
             <Button variant="subtle" component={Link} to="/meal-plans">
               Meal Plans
             </Button>
@@ -69,6 +80,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/recipes" replace />} />
           <Route path="/recipes" element={<RecipeListPage />} />
+          <Route path="/recipes/book" element={<RecipeBookPage />} />
           <Route path="/recipes/new" element={<RecipeFormPage />} />
           <Route path="/recipes/import" element={<RecipeImportPage />} />
           <Route path="/recipes/:id" element={<RecipeDetailPage />} />

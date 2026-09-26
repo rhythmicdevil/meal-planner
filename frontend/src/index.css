@@ -29,13 +29,15 @@ body {
   }
 }
 
-.shopping-list-columns {
+/* Two-column layout for printable lists (shopping list, recipe book, ...) -- saves paper
+   when printed, and collapses to one column on narrow screens where two would be cramped. */
+.print-columns {
   column-count: 2;
   column-gap: 2rem;
 }
 
 @media screen and (max-width: 700px) {
-  .shopping-list-columns {
+  .print-columns {
     column-count: 1;
   }
 }
