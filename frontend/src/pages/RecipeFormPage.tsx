@@ -1,10 +1,11 @@
 import { useEffect } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { Button, Group, LoadingOverlay, NumberInput, Stack, TagsInput, TextInput, Title } from '@mantine/core'
+import { Button, Group, LoadingOverlay, MultiSelect, NumberInput, Select, Stack, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { ApiRequestError } from '../api/client'
 import { useCreateRecipe, useRecipe, useUpdateRecipe } from '../api/recipes'
+import { useTags } from '../api/tags'
 import type { ImportedRecipe, RecipeRequest } from '../api/types'
 import { RecipeIngredientsEditor } from '../components/RecipeIngredientsEditor'
 import { RecipeStepsEditor } from '../components/RecipeStepsEditor'
@@ -18,8 +19,19 @@ export function RecipeFormPage() {
   const imported = (location.state as { imported?: ImportedRecipe } | null)?.imported
 
   const { data: existing, isLoading: isLoadingExisting } = useRecipe(id)
+  const { data: tags = [] } = useTags()
   const createRecipe = useCreateRecipe()
   const updateRecipe = useUpdateRecipe(id ?? '')
+
+  const cuisineOptions = tags
+    .filter((tag) => tag.type === 'CUISINE')
+    .map((tag) => ({ value: String(tag.id), label: tag.name }))
+    .sort((a, b) => a.label.localeCompare(b.label))
+
+  const descriptiveOptions = tags
+    .filter((tag) => tag.type === 'DESCRIPTIVE')
+    .map((tag) => ({ value: String(tag.id), label: tag.name }))
+    .sort((a, b) => a.label.localeCompare(b.label))
 
   const form = useForm<RecipeFormValues>({
     mode: 'controlled',
@@ -39,7 +51,8 @@ export function RecipeFormPage() {
       name: existing.name,
       sourceUrl: existing.sourceUrl ?? '',
       servings: existing.servings ?? '',
-      tags: existing.tags,
+      cuisineTagId: existing.cuisineTag ? String(existing.cuisineTag.id) : null,
+      descriptiveTagIds: existing.descriptiveTags.map((tag) => String(tag.id)),
       steps: [...existing.steps]
         .sort((a, b) => a.stepNumber - b.stepNumber)
         .map((step) => step.stepText),
@@ -64,7 +77,6 @@ export function RecipeFormPage() {
       name: imported.name,
       sourceUrl: imported.sourceUrl,
       servings: imported.servings ?? '',
-      tags: imported.tags,
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -76,7 +88,8 @@ export function RecipeFormPage() {
       name: values.name.trim(),
       sourceUrl: values.sourceUrl.trim() || null,
       servings: values.servings === '' ? null : values.servings,
-      tags: values.tags,
+      cuisineTagId: values.cuisineTagId ? Number(values.cuisineTagId) : null,
+      descriptiveTagIds: values.descriptiveTagIds.map(Number),
       steps: values.steps.map((stepText, index) => ({ stepNumber: index + 1, stepText })),
       ingredients: values.ingredients.map((row) => ({
         ingredientId: row.ingredientId as number,
@@ -120,7 +133,22 @@ export function RecipeFormPage() {
           <TextInput label="Name" required {...form.getInputProps('name')} />
           <TextInput label="Source URL" placeholder="https://…" {...form.getInputProps('sourceUrl')} />
           <NumberInput label="Servings" min={1} {...form.getInputProps('servings')} />
-          <TagsInput label="Tags" placeholder="Add a tag and press Enter" {...form.getInputProps('tags')} />
+          <Select
+            label="Cuisine"
+            placeholder="e.g. Mexican, Japanese, American…"
+            searchable
+            clearable
+            data={cuisineOptions}
+            {...form.getInputProps('cuisineTagId')}
+          />
+          <MultiSelect
+            label="Descriptive tags"
+            placeholder="e.g. breakfast, soup, healthy…"
+            searchable
+            clearable
+            data={descriptiveOptions}
+            {...form.getInputProps('descriptiveTagIds')}
+          />
 
           <Title order={4}>Ingredients</Title>
           <RecipeIngredientsEditor form={form} initialBulkPasteText={imported?.ingredientLines.join('\n')} />

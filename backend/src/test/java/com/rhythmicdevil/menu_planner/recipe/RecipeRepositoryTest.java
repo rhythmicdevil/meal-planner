@@ -4,6 +4,9 @@ import com.rhythmicdevil.menu_planner.ingredient.Ingredient;
 import com.rhythmicdevil.menu_planner.ingredient.IngredientCategory;
 import com.rhythmicdevil.menu_planner.ingredient.IngredientRepository;
 import com.rhythmicdevil.menu_planner.support.AbstractIntegrationTest;
+import com.rhythmicdevil.menu_planner.tag.Tag;
+import com.rhythmicdevil.menu_planner.tag.TagRepository;
+import com.rhythmicdevil.menu_planner.tag.TagType;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,13 +26,20 @@ class RecipeRepositoryTest extends AbstractIntegrationTest {
     @Autowired
     private IngredientRepository ingredientRepository;
 
+    @Autowired
+    private TagRepository tagRepository;
+
     @Test
     void savesAndReloadsStepsIngredientsAndTags() {
         Ingredient onion = ingredientRepository.save(new Ingredient("yellow onion", IngredientCategory.PRODUCE));
+        Tag mexican = tagRepository.save(new Tag("Mexican", TagType.CUISINE));
+        Tag weeknight = tagRepository.save(new Tag("weeknight", TagType.DESCRIPTIVE));
+        Tag quick = tagRepository.save(new Tag("quick", TagType.DESCRIPTIVE));
 
         Recipe recipe = new Recipe("Weeknight Tacos");
         recipe.setServings(4);
-        recipe.setTags(Set.of("weeknight", "mexican"));
+        recipe.setCuisineTag(mexican);
+        recipe.setDescriptiveTags(Set.of(weeknight, quick));
         recipe.setSteps(List.of(
                 new RecipeStep(1, "Dice the onion"),
                 new RecipeStep(2, "Brown the meat")
@@ -45,7 +55,9 @@ class RecipeRepositoryTest extends AbstractIntegrationTest {
 
         Recipe reloaded = recipeRepository.findById(id).orElseThrow();
         assertThat(reloaded.getName()).isEqualTo("Weeknight Tacos");
-        assertThat(reloaded.getTags()).containsExactlyInAnyOrder("weeknight", "mexican");
+        assertThat(reloaded.getCuisineTag().getName()).isEqualTo("Mexican");
+        assertThat(reloaded.getDescriptiveTags()).extracting(Tag::getName)
+                .containsExactlyInAnyOrder("weeknight", "quick");
         assertThat(reloaded.getSteps()).extracting(RecipeStep::getStepText)
                 .containsExactly("Dice the onion", "Brown the meat");
         assertThat(reloaded.getIngredients()).hasSize(1);

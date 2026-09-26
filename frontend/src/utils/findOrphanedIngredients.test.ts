@@ -29,7 +29,8 @@ function recipe(id: number, ingredientIds: number[]): Recipe {
     servings: null,
     steps: [],
     ingredients: ingredientIds.map(ri),
-    tags: [],
+    cuisineTag: null,
+    descriptiveTags: [],
   }
 }
 

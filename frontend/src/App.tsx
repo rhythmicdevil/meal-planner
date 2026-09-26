@@ -22,6 +22,8 @@ import { StapleGroupFormPage } from './pages/StapleGroupFormPage'
 import { StapleGroupListPage } from './pages/StapleGroupListPage'
 import { StoreFormPage } from './pages/StoreFormPage'
 import { StoreListPage } from './pages/StoreListPage'
+import { TagFormPage } from './pages/TagFormPage'
+import { TagListPage } from './pages/TagListPage'
 
 function App() {
   return (
@@ -64,6 +66,9 @@ function App() {
                 <Menu.Item component={Link} to="/stores">
                   Stores
                 </Menu.Item>
+                <Menu.Item component={Link} to="/tags">
+                  Tags
+                </Menu.Item>
                 <Menu.Divider />
                 <Menu.Item component={Link} to="/backup">
                   Backup
@@ -105,6 +110,9 @@ function App() {
           <Route path="/stores" element={<StoreListPage />} />
           <Route path="/stores/new" element={<StoreFormPage />} />
           <Route path="/stores/:id/edit" element={<StoreFormPage />} />
+          <Route path="/tags" element={<TagListPage />} />
+          <Route path="/tags/new" element={<TagFormPage />} />
+          <Route path="/tags/:id/edit" element={<TagFormPage />} />
           <Route path="/backup" element={<BackupPage />} />
           <Route path="/help" element={<HelpPage />} />
         </Routes>

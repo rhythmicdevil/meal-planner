@@ -1,5 +1,6 @@
 package com.rhythmicdevil.menu_planner.recipe;
 
+import com.rhythmicdevil.menu_planner.tag.Tag;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -9,6 +10,9 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
@@ -43,10 +47,17 @@ public class Recipe {
     @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RecipeIngredient> ingredients = new ArrayList<>();
 
-    @ElementCollection
-    @CollectionTable(name = "recipe_tag", joinColumns = @JoinColumn(name = "recipe_id"))
-    @Column(name = "tag")
-    private Set<String> tags = new HashSet<>();
+    @ManyToOne
+    @JoinColumn(name = "cuisine_tag_id")
+    private Tag cuisineTag;
+
+    @ManyToMany
+    @JoinTable(
+            name = "recipe_descriptive_tag",
+            joinColumns = @JoinColumn(name = "recipe_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private Set<Tag> descriptiveTags = new HashSet<>();
 
     protected Recipe() {
     }
@@ -103,11 +114,19 @@ public class Recipe {
         }
     }
 
-    public Set<String> getTags() {
-        return tags;
+    public Tag getCuisineTag() {
+        return cuisineTag;
     }
 
-    public void setTags(Set<String> tags) {
-        this.tags = tags;
+    public void setCuisineTag(Tag cuisineTag) {
+        this.cuisineTag = cuisineTag;
+    }
+
+    public Set<Tag> getDescriptiveTags() {
+        return descriptiveTags;
+    }
+
+    public void setDescriptiveTags(Set<Tag> descriptiveTags) {
+        this.descriptiveTags = descriptiveTags;
     }
 }

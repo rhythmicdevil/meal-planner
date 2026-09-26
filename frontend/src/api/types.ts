@@ -114,6 +114,26 @@ export interface StoreRequest {
   name: string
 }
 
+export type TagType = 'CUISINE' | 'DESCRIPTIVE'
+
+export const TAG_TYPES: TagType[] = ['CUISINE', 'DESCRIPTIVE']
+
+export const TAG_TYPE_LABELS: Record<TagType, string> = {
+  CUISINE: 'Cuisine',
+  DESCRIPTIVE: 'Descriptive',
+}
+
+export interface Tag {
+  id: number
+  name: string
+  type: TagType
+}
+
+export interface TagRequest {
+  name: string
+  type: TagType
+}
+
 export interface Ingredient {
   id: number
   name: string
@@ -167,7 +187,8 @@ export interface Recipe {
   servings: number | null
   steps: RecipeStep[]
   ingredients: RecipeIngredient[]
-  tags: string[]
+  cuisineTag: Tag | null
+  descriptiveTags: Tag[]
 }
 
 export interface RecipeRequest {
@@ -176,7 +197,8 @@ export interface RecipeRequest {
   servings?: number | null
   steps: RecipeStep[]
   ingredients: RecipeIngredientRequest[]
-  tags: string[]
+  cuisineTagId?: number | null
+  descriptiveTagIds?: number[]
 }
 
 export interface ImportedRecipe {

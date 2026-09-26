@@ -1,10 +1,10 @@
 package com.rhythmicdevil.menu_planner.recipe.dto;
 
 import com.rhythmicdevil.menu_planner.recipe.Recipe;
+import com.rhythmicdevil.menu_planner.tag.dto.TagResponse;
 
-import java.util.HashSet;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
 
 public record RecipeResponse(
         Long id,
@@ -13,7 +13,8 @@ public record RecipeResponse(
         Integer servings,
         List<RecipeStepDto> steps,
         List<RecipeIngredientResponse> ingredients,
-        Set<String> tags
+        TagResponse cuisineTag,
+        List<TagResponse> descriptiveTags
 ) {
     public static RecipeResponse from(Recipe recipe) {
         return new RecipeResponse(
@@ -23,7 +24,11 @@ public record RecipeResponse(
                 recipe.getServings(),
                 recipe.getSteps().stream().map(RecipeStepDto::from).toList(),
                 recipe.getIngredients().stream().map(RecipeIngredientResponse::from).toList(),
-                new HashSet<>(recipe.getTags())
+                recipe.getCuisineTag() != null ? TagResponse.from(recipe.getCuisineTag()) : null,
+                recipe.getDescriptiveTags().stream()
+                        .map(TagResponse::from)
+                        .sorted(Comparator.comparing(TagResponse::name))
+                        .toList()
         );
     }
 }

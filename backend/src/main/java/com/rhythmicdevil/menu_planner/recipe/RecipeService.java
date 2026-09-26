@@ -6,6 +6,9 @@ import com.rhythmicdevil.menu_planner.recipe.dto.RecipeIngredientRequest;
 import com.rhythmicdevil.menu_planner.recipe.dto.RecipeRequest;
 import com.rhythmicdevil.menu_planner.recipe.dto.RecipeResponse;
 import com.rhythmicdevil.menu_planner.recipe.dto.RecipeStepDto;
+import com.rhythmicdevil.menu_planner.tag.Tag;
+import com.rhythmicdevil.menu_planner.tag.TagRepository;
+import com.rhythmicdevil.menu_planner.tag.TagType;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @Transactional
@@ -20,10 +24,16 @@ public class RecipeService {
 
     private final RecipeRepository recipeRepository;
     private final IngredientRepository ingredientRepository;
+    private final TagRepository tagRepository;
 
-    public RecipeService(RecipeRepository recipeRepository, IngredientRepository ingredientRepository) {
+    public RecipeService(
+            RecipeRepository recipeRepository,
+            IngredientRepository ingredientRepository,
+            TagRepository tagRepository
+    ) {
         this.recipeRepository = recipeRepository;
         this.ingredientRepository = ingredientRepository;
+        this.tagRepository = tagRepository;
     }
 
     @Transactional(readOnly = true)
@@ -61,7 +71,8 @@ public class RecipeService {
     private void applyRequest(Recipe recipe, RecipeRequest request) {
         recipe.setSourceUrl(request.sourceUrl());
         recipe.setServings(request.servings());
-        recipe.setTags(request.tags() != null ? new HashSet<>(request.tags()) : new HashSet<>());
+        recipe.setCuisineTag(resolveTag(request.cuisineTagId(), TagType.CUISINE));
+        recipe.setDescriptiveTags(resolveTags(request.descriptiveTagIds(), TagType.DESCRIPTIVE));
 
         List<RecipeStep> steps = new ArrayList<>();
         if (request.steps() != null) {
@@ -78,6 +89,30 @@ public class RecipeService {
             }
         }
         recipe.replaceIngredients(recipeIngredients);
+    }
+
+    private Tag resolveTag(Long tagId, TagType expectedType) {
+        if (tagId == null) {
+            return null;
+        }
+        Tag tag = tagRepository.findById(tagId)
+                .orElseThrow(() -> new EntityNotFoundException("Tag " + tagId + " not found"));
+        if (tag.getType() != expectedType) {
+            throw new IllegalArgumentException(
+                    "Tag " + tagId + " (" + tag.getName() + ") is not a " + expectedType.name().toLowerCase() + " tag");
+        }
+        return tag;
+    }
+
+    private Set<Tag> resolveTags(Set<Long> tagIds, TagType expectedType) {
+        Set<Tag> tags = new HashSet<>();
+        if (tagIds == null) {
+            return tags;
+        }
+        for (Long tagId : tagIds) {
+            tags.add(resolveTag(tagId, expectedType));
+        }
+        return tags;
     }
 
     private RecipeIngredient toRecipeIngredient(RecipeIngredientRequest request) {

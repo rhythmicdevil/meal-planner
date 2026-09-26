@@ -75,7 +75,7 @@ class MealPlanControllerTest extends AbstractApiTest {
 
         // recipes are referenced live (no version pinning) -- an edit should show up immediately
         RecipeRequest updateRecipe = new RecipeRequest(
-                "Pancakes v2", null, null, List.of(), List.of(), Set.of());
+                "Pancakes v2", null, null, List.of(), List.of(), null, Set.of());
         mockMvc.perform(authenticated(put("/api/recipes/" + pancakes.getId()))
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(updateRecipe)))

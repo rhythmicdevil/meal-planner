@@ -28,9 +28,11 @@ export function RecipeBookPage() {
                 <Anchor component={Link} to={`/recipes/${recipe.id}`}>
                   {recipe.name}
                 </Anchor>
-                {recipe.tags.length > 0 && (
+                {(recipe.cuisineTag || recipe.descriptiveTags.length > 0) && (
                   <Text size="sm" c="dimmed">
-                    {recipe.tags.join(', ')}
+                    {[recipe.cuisineTag?.name, ...recipe.descriptiveTags.map((tag) => tag.name)]
+                      .filter(Boolean)
+                      .join(', ')}
                   </Text>
                 )}
               </List.Item>

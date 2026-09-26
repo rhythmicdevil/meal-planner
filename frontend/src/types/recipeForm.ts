@@ -18,7 +18,8 @@ export interface RecipeFormValues {
   name: string
   sourceUrl: string
   servings: number | ''
-  tags: string[]
+  cuisineTagId: string | null
+  descriptiveTagIds: string[]
   steps: string[]
   ingredients: RecipeIngredientRow[]
 }
@@ -39,7 +40,8 @@ export const emptyRecipeFormValues: RecipeFormValues = {
   name: '',
   sourceUrl: '',
   servings: '',
-  tags: [],
+  cuisineTagId: null,
+  descriptiveTagIds: [],
   steps: [],
   ingredients: [],
 }
