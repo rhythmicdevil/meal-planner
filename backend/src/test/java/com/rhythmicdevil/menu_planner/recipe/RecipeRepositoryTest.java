@@ -38,7 +38,7 @@ class RecipeRepositoryTest extends AbstractIntegrationTest {
 
         Recipe recipe = new Recipe("Weeknight Tacos");
         recipe.setServings(4);
-        recipe.setCuisineTag(mexican);
+        recipe.setCuisineTags(Set.of(mexican));
         recipe.setDescriptiveTags(Set.of(weeknight, quick));
         recipe.setSteps(List.of(
                 new RecipeStep(1, "Dice the onion"),
@@ -55,7 +55,7 @@ class RecipeRepositoryTest extends AbstractIntegrationTest {
 
         Recipe reloaded = recipeRepository.findById(id).orElseThrow();
         assertThat(reloaded.getName()).isEqualTo("Weeknight Tacos");
-        assertThat(reloaded.getCuisineTag().getName()).isEqualTo("Mexican");
+        assertThat(reloaded.getCuisineTags()).extracting(Tag::getName).containsExactly("Mexican");
         assertThat(reloaded.getDescriptiveTags()).extracting(Tag::getName)
                 .containsExactlyInAnyOrder("weeknight", "quick");
         assertThat(reloaded.getSteps()).extracting(RecipeStep::getStepText)

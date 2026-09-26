@@ -69,6 +69,8 @@ export function TagFormPage() {
           <Select
             label="Type"
             required
+            disabled={isEdit}
+            description={isEdit ? "Can't be changed once a tag exists — delete and recreate it instead" : undefined}
             data={TAG_TYPES.map((type) => ({ value: type, label: TAG_TYPE_LABELS[type] }))}
             {...form.getInputProps('type')}
           />

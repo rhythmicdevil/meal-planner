@@ -13,7 +13,7 @@ public record RecipeRequest(
         @Positive Integer servings,
         List<@Valid RecipeStepDto> steps,
         List<@Valid RecipeIngredientRequest> ingredients,
-        Long cuisineTagId,
+        Set<Long> cuisineTagIds,
         Set<Long> descriptiveTagIds
 ) {
 }

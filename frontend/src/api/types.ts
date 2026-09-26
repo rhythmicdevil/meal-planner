@@ -187,7 +187,7 @@ export interface Recipe {
   servings: number | null
   steps: RecipeStep[]
   ingredients: RecipeIngredient[]
-  cuisineTag: Tag | null
+  cuisineTags: Tag[]
   descriptiveTags: Tag[]
 }
 
@@ -197,7 +197,7 @@ export interface RecipeRequest {
   servings?: number | null
   steps: RecipeStep[]
   ingredients: RecipeIngredientRequest[]
-  cuisineTagId?: number | null
+  cuisineTagIds?: number[]
   descriptiveTagIds?: number[]
 }
 

@@ -12,7 +12,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
@@ -47,9 +46,13 @@ public class Recipe {
     @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RecipeIngredient> ingredients = new ArrayList<>();
 
-    @ManyToOne
-    @JoinColumn(name = "cuisine_tag_id")
-    private Tag cuisineTag;
+    @ManyToMany
+    @JoinTable(
+            name = "recipe_cuisine_tag",
+            joinColumns = @JoinColumn(name = "recipe_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private Set<Tag> cuisineTags = new HashSet<>();
 
     @ManyToMany
     @JoinTable(
@@ -114,12 +117,12 @@ public class Recipe {
         }
     }
 
-    public Tag getCuisineTag() {
-        return cuisineTag;
+    public Set<Tag> getCuisineTags() {
+        return cuisineTags;
     }
 
-    public void setCuisineTag(Tag cuisineTag) {
-        this.cuisineTag = cuisineTag;
+    public void setCuisineTags(Set<Tag> cuisineTags) {
+        this.cuisineTags = cuisineTags;
     }
 
     public Set<Tag> getDescriptiveTags() {

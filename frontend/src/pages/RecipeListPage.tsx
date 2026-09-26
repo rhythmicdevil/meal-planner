@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Alert, Anchor, Badge, Button, Group, Loader, MultiSelect, Select, Stack, Table, Text, TextInput, Title } from '@mantine/core'
+import { Alert, Anchor, Badge, Button, Group, Loader, MultiSelect, Stack, Table, Text, TextInput, Title } from '@mantine/core'
 import { useRecipes } from '../api/recipes'
 import type { Recipe } from '../api/types'
 import { SortableTh } from '../components/SortableTh'
@@ -8,21 +8,22 @@ import { useSort } from '../hooks/useSort'
 
 type RecipeSortKey = 'name' | 'servings' | 'cuisine'
 
+const joinedNames = (tags: { name: string }[]) => tags.map((tag) => tag.name).join(', ')
+
 const recipeComparators: Record<RecipeSortKey, (a: Recipe, b: Recipe) => number> = {
   name: (a, b) => a.name.localeCompare(b.name),
   servings: (a, b) => (a.servings ?? -Infinity) - (b.servings ?? -Infinity) || a.name.localeCompare(b.name),
-  cuisine: (a, b) =>
-    (a.cuisineTag?.name ?? '').localeCompare(b.cuisineTag?.name ?? '') || a.name.localeCompare(b.name),
+  cuisine: (a, b) => joinedNames(a.cuisineTags).localeCompare(joinedNames(b.cuisineTags)) || a.name.localeCompare(b.name),
 }
 
 export function RecipeListPage() {
   const { data: recipes, isLoading, isError } = useRecipes()
   const [search, setSearch] = useState('')
-  const [cuisine, setCuisine] = useState<string | null>(null)
+  const [cuisineTags, setCuisineTags] = useState<string[]>([])
   const [descriptiveTags, setDescriptiveTags] = useState<string[]>([])
 
-  const allCuisines = Array.from(
-    new Set((recipes ?? []).map((recipe) => recipe.cuisineTag?.name).filter((name): name is string => !!name)),
+  const allCuisineTags = Array.from(
+    new Set((recipes ?? []).flatMap((recipe) => recipe.cuisineTags.map((tag) => tag.name))),
   ).sort()
   const allDescriptiveTags = Array.from(
     new Set((recipes ?? []).flatMap((recipe) => recipe.descriptiveTags.map((tag) => tag.name))),
@@ -33,9 +34,9 @@ export function RecipeListPage() {
     (recipe) =>
       (query === '' ||
         recipe.name.toLowerCase().includes(query) ||
-        recipe.cuisineTag?.name.toLowerCase().includes(query) ||
+        recipe.cuisineTags.some((tag) => tag.name.toLowerCase().includes(query)) ||
         recipe.descriptiveTags.some((tag) => tag.name.toLowerCase().includes(query))) &&
-      (cuisine === null || recipe.cuisineTag?.name === cuisine) &&
+      cuisineTags.every((tag) => recipe.cuisineTags.some((t) => t.name === tag)) &&
       descriptiveTags.every((tag) => recipe.descriptiveTags.some((t) => t.name === tag)),
   )
 
@@ -62,13 +63,13 @@ export function RecipeListPage() {
           value={search}
           onChange={(event) => setSearch(event.currentTarget.value)}
         />
-        <Select
+        <MultiSelect
           style={{ flex: 1 }}
           placeholder="Filter by cuisine"
           clearable
-          data={allCuisines}
-          value={cuisine}
-          onChange={setCuisine}
+          data={allCuisineTags}
+          value={cuisineTags}
+          onChange={setCuisineTags}
         />
         <MultiSelect
           style={{ flex: 1 }}
@@ -124,7 +125,15 @@ export function RecipeListPage() {
                   </Anchor>
                 </Table.Td>
                 <Table.Td>{recipe.servings ?? '—'}</Table.Td>
-                <Table.Td>{recipe.cuisineTag?.name ?? '—'}</Table.Td>
+                <Table.Td>
+                  <Group gap="xs">
+                    {recipe.cuisineTags.map((tag) => (
+                      <Badge key={tag.id} variant="filled" color="orange">
+                        {tag.name}
+                      </Badge>
+                    ))}
+                  </Group>
+                </Table.Td>
                 <Table.Td>
                   <Group gap="xs">
                     {recipe.descriptiveTags.map((tag) => (

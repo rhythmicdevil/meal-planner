@@ -1,15 +1,52 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { Button, Group, LoadingOverlay, MultiSelect, NumberInput, Select, Stack, TextInput, Title } from '@mantine/core'
+import { Button, Group, LoadingOverlay, NumberInput, Stack, TagsInput, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { ApiRequestError } from '../api/client'
 import { useCreateRecipe, useRecipe, useUpdateRecipe } from '../api/recipes'
-import { useTags } from '../api/tags'
-import type { ImportedRecipe, RecipeRequest } from '../api/types'
+import { useCreateTag, useTags } from '../api/tags'
+import type { ImportedRecipe, RecipeRequest, Tag, TagType } from '../api/types'
 import { RecipeIngredientsEditor } from '../components/RecipeIngredientsEditor'
 import { RecipeStepsEditor } from '../components/RecipeStepsEditor'
 import { emptyRecipeFormValues, type RecipeFormValues } from '../types/recipeForm'
+
+// Resolves plain tag names (as typed into a TagsInput, exactly like the old freeform tags
+// field) against the catalog, creating any that don't already exist as a tag of the given
+// type -- mirrors how bulk-pasted ingredients auto-create an unmatched catalog entry.
+// createdByName guards against creating the same brand-new name twice in one submit.
+async function resolveTagIds(
+  names: string[],
+  type: TagType,
+  catalog: Tag[],
+  createTag: (name: string) => Promise<Tag>,
+): Promise<number[]> {
+  const createdByName = new Map<string, number>()
+  const ids: number[] = []
+
+  for (const rawName of names) {
+    const name = rawName.trim()
+    if (!name) continue
+    const key = name.toLowerCase()
+
+    const existing = catalog.find((tag) => tag.type === type && tag.name.toLowerCase() === key)
+    let id: number
+    if (existing) {
+      id = existing.id
+    } else if (createdByName.has(key)) {
+      id = createdByName.get(key)!
+    } else {
+      id = (await createTag(name)).id
+      createdByName.set(key, id)
+    }
+
+    if (!ids.includes(id)) {
+      ids.push(id)
+    }
+  }
+
+  return ids
+}
 
 export function RecipeFormPage() {
   const { id } = useParams<{ id: string }>()
@@ -19,19 +56,13 @@ export function RecipeFormPage() {
   const imported = (location.state as { imported?: ImportedRecipe } | null)?.imported
 
   const { data: existing, isLoading: isLoadingExisting } = useRecipe(id)
-  const { data: tags = [] } = useTags()
+  const { data: tags = [], isLoading: isLoadingTags } = useTags()
   const createRecipe = useCreateRecipe()
   const updateRecipe = useUpdateRecipe(id ?? '')
+  const createTag = useCreateTag()
 
-  const cuisineOptions = tags
-    .filter((tag) => tag.type === 'CUISINE')
-    .map((tag) => ({ value: String(tag.id), label: tag.name }))
-    .sort((a, b) => a.label.localeCompare(b.label))
-
-  const descriptiveOptions = tags
-    .filter((tag) => tag.type === 'DESCRIPTIVE')
-    .map((tag) => ({ value: String(tag.id), label: tag.name }))
-    .sort((a, b) => a.label.localeCompare(b.label))
+  const cuisineNameSuggestions = tags.filter((tag) => tag.type === 'CUISINE').map((tag) => tag.name)
+  const descriptiveNameSuggestions = tags.filter((tag) => tag.type === 'DESCRIPTIVE').map((tag) => tag.name)
 
   const form = useForm<RecipeFormValues>({
     mode: 'controlled',
@@ -51,8 +82,8 @@ export function RecipeFormPage() {
       name: existing.name,
       sourceUrl: existing.sourceUrl ?? '',
       servings: existing.servings ?? '',
-      cuisineTagId: existing.cuisineTag ? String(existing.cuisineTag.id) : null,
-      descriptiveTagIds: existing.descriptiveTags.map((tag) => String(tag.id)),
+      cuisineTagNames: existing.cuisineTags.map((tag) => tag.name),
+      descriptiveTagNames: existing.descriptiveTags.map((tag) => tag.name),
       steps: [...existing.steps]
         .sort((a, b) => a.stepNumber - b.stepNumber)
         .map((step) => step.stepText),
@@ -81,29 +112,57 @@ export function RecipeFormPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // The source page's recipeCategory/recipeCuisine (e.g. "Mexican", "dinner") land in
+  // imported.tags as plain strings with no way to tell which are cuisines vs. descriptive
+  // labels. Best-effort: whichever imported strings match an existing CUISINE catalog tag by
+  // name go into cuisine; everything else goes into descriptive tags as typed (unmatched
+  // names there just get auto-created on submit, same as manually-typed ones). Waits for the
+  // catalog to load and a ref guards against re-running once it has.
+  const hasAppliedImportedTags = useRef(false)
+  useEffect(() => {
+    if (isEdit || !imported || hasAppliedImportedTags.current || isLoadingTags) return
+    hasAppliedImportedTags.current = true
+
+    const cuisineNames = new Set(
+      tags.filter((tag) => tag.type === 'CUISINE').map((tag) => tag.name.toLowerCase()),
+    )
+    const matchedCuisines = imported.tags.filter((name) => cuisineNames.has(name.toLowerCase()))
+    const descriptiveNames = imported.tags.filter((name) => !cuisineNames.has(name.toLowerCase()))
+
+    form.setFieldValue('cuisineTagNames', matchedCuisines)
+    form.setFieldValue('descriptiveTagNames', descriptiveNames)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoadingTags])
+
   const isSaving = createRecipe.isPending || updateRecipe.isPending
 
   const handleSubmit = form.onSubmit(async (values) => {
-    const request: RecipeRequest = {
-      name: values.name.trim(),
-      sourceUrl: values.sourceUrl.trim() || null,
-      servings: values.servings === '' ? null : values.servings,
-      cuisineTagId: values.cuisineTagId ? Number(values.cuisineTagId) : null,
-      descriptiveTagIds: values.descriptiveTagIds.map(Number),
-      steps: values.steps.map((stepText, index) => ({ stepNumber: index + 1, stepText })),
-      ingredients: values.ingredients.map((row) => ({
-        ingredientId: row.ingredientId as number,
-        amount: row.amount === '' ? null : row.amount,
-        unit: row.unit.trim() || null,
-        cutType: row.cutType,
-        cutTypeOther: row.cutTypeOther.trim() || null,
-        stateCondition: row.stateCondition,
-        stateConditionOther: row.stateConditionOther.trim() || null,
-        notes: row.notes.trim() || null,
-      })),
-    }
-
     try {
+      const createTagOfType = (type: TagType) => (name: string) => createTag.mutateAsync({ name, type })
+      const [cuisineIds, descriptiveIds] = await Promise.all([
+        resolveTagIds(values.cuisineTagNames, 'CUISINE', tags, createTagOfType('CUISINE')),
+        resolveTagIds(values.descriptiveTagNames, 'DESCRIPTIVE', tags, createTagOfType('DESCRIPTIVE')),
+      ])
+
+      const request: RecipeRequest = {
+        name: values.name.trim(),
+        sourceUrl: values.sourceUrl.trim() || null,
+        servings: values.servings === '' ? null : values.servings,
+        cuisineTagIds: cuisineIds,
+        descriptiveTagIds: descriptiveIds,
+        steps: values.steps.map((stepText, index) => ({ stepNumber: index + 1, stepText })),
+        ingredients: values.ingredients.map((row) => ({
+          ingredientId: row.ingredientId as number,
+          amount: row.amount === '' ? null : row.amount,
+          unit: row.unit.trim() || null,
+          cutType: row.cutType,
+          cutTypeOther: row.cutTypeOther.trim() || null,
+          stateCondition: row.stateCondition,
+          stateConditionOther: row.stateConditionOther.trim() || null,
+          notes: row.notes.trim() || null,
+        })),
+      }
+
       const saved = isEdit
         ? await updateRecipe.mutateAsync(request)
         : await createRecipe.mutateAsync(request)
@@ -133,21 +192,17 @@ export function RecipeFormPage() {
           <TextInput label="Name" required {...form.getInputProps('name')} />
           <TextInput label="Source URL" placeholder="https://…" {...form.getInputProps('sourceUrl')} />
           <NumberInput label="Servings" min={1} {...form.getInputProps('servings')} />
-          <Select
+          <TagsInput
             label="Cuisine"
-            placeholder="e.g. Mexican, Japanese, American…"
-            searchable
-            clearable
-            data={cuisineOptions}
-            {...form.getInputProps('cuisineTagId')}
+            placeholder="Add a cuisine and press Enter"
+            data={cuisineNameSuggestions}
+            {...form.getInputProps('cuisineTagNames')}
           />
-          <MultiSelect
+          <TagsInput
             label="Descriptive tags"
-            placeholder="e.g. breakfast, soup, healthy…"
-            searchable
-            clearable
-            data={descriptiveOptions}
-            {...form.getInputProps('descriptiveTagIds')}
+            placeholder="Add a tag and press Enter"
+            data={descriptiveNameSuggestions}
+            {...form.getInputProps('descriptiveTagNames')}
           />
 
           <Title order={4}>Ingredients</Title>

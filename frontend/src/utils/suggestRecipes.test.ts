@@ -18,7 +18,7 @@ function ri(ingredientId: number, ingredientName: string, cutType: RecipeIngredi
 }
 
 function recipe(id: number, name: string, ingredients: RecipeIngredient[]): Recipe {
-  return { id, name, sourceUrl: null, servings: null, steps: [], ingredients, cuisineTag: null, descriptiveTags: [] }
+  return { id, name, sourceUrl: null, servings: null, steps: [], ingredients, cuisineTags: [], descriptiveTags: [] }
 }
 
 const garlic = (cutType?: RecipeIngredient['cutType']) => ri(1, 'garlic', cutType)

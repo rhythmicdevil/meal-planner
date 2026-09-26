@@ -62,11 +62,11 @@ export function RecipeDetailPage() {
 
       <Group gap="xs">
         {recipe.servings && <Badge variant="outline">Serves {recipe.servings}</Badge>}
-        {recipe.cuisineTag && (
-          <Badge variant="filled" color="orange">
-            {recipe.cuisineTag.name}
+        {recipe.cuisineTags.map((tag) => (
+          <Badge key={tag.id} variant="filled" color="orange">
+            {tag.name}
           </Badge>
-        )}
+        ))}
         {recipe.descriptiveTags.map((tag) => (
           <Badge key={tag.id} variant="light">
             {tag.name}

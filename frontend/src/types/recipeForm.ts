@@ -18,8 +18,11 @@ export interface RecipeFormValues {
   name: string
   sourceUrl: string
   servings: number | ''
-  cuisineTagId: string | null
-  descriptiveTagIds: string[]
+  // Plain tag names, exactly like the old freeform tags field -- resolved against the tag
+  // catalog (creating any that don't exist yet) only at submit time. cuisineTagNames is
+  // capped to one entry (TagsInput maxTags={1}).
+  cuisineTagNames: string[]
+  descriptiveTagNames: string[]
   steps: string[]
   ingredients: RecipeIngredientRow[]
 }
@@ -40,8 +43,8 @@ export const emptyRecipeFormValues: RecipeFormValues = {
   name: '',
   sourceUrl: '',
   servings: '',
-  cuisineTagId: null,
-  descriptiveTagIds: [],
+  cuisineTagNames: [],
+  descriptiveTagNames: [],
   steps: [],
   ingredients: [],
 }

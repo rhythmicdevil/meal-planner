@@ -35,10 +35,13 @@ public class TagService {
         return TagResponse.from(tagRepository.save(tag));
     }
 
+    // Type is intentionally not editable here -- changing it out from under a tag already
+    // assigned as some Recipe's cuisineTag (or among its descriptiveTags) would silently
+    // break the type invariant RecipeService enforces on every subsequent save. Rename the
+    // tag if it was mislabeled, or delete and recreate it if it truly needs a different type.
     public TagResponse update(Long id, TagRequest request) {
         Tag tag = getOrThrow(id);
         tag.setName(request.name());
-        tag.setType(request.type());
         return TagResponse.from(tag);
     }
 

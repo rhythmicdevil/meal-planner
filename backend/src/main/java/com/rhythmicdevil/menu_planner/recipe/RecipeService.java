@@ -71,7 +71,7 @@ public class RecipeService {
     private void applyRequest(Recipe recipe, RecipeRequest request) {
         recipe.setSourceUrl(request.sourceUrl());
         recipe.setServings(request.servings());
-        recipe.setCuisineTag(resolveTag(request.cuisineTagId(), TagType.CUISINE));
+        recipe.setCuisineTags(resolveTags(request.cuisineTagIds(), TagType.CUISINE));
         recipe.setDescriptiveTags(resolveTags(request.descriptiveTagIds(), TagType.DESCRIPTIVE));
 
         List<RecipeStep> steps = new ArrayList<>();
@@ -91,28 +91,25 @@ public class RecipeService {
         recipe.replaceIngredients(recipeIngredients);
     }
 
-    private Tag resolveTag(Long tagId, TagType expectedType) {
-        if (tagId == null) {
-            return null;
-        }
-        Tag tag = tagRepository.findById(tagId)
-                .orElseThrow(() -> new EntityNotFoundException("Tag " + tagId + " not found"));
-        if (tag.getType() != expectedType) {
-            throw new IllegalArgumentException(
-                    "Tag " + tagId + " (" + tag.getName() + ") is not a " + expectedType.name().toLowerCase() + " tag");
-        }
-        return tag;
-    }
-
     private Set<Tag> resolveTags(Set<Long> tagIds, TagType expectedType) {
-        Set<Tag> tags = new HashSet<>();
-        if (tagIds == null) {
-            return tags;
+        if (tagIds == null || tagIds.isEmpty()) {
+            return new HashSet<>();
         }
-        for (Long tagId : tagIds) {
-            tags.add(resolveTag(tagId, expectedType));
+        if (tagIds.contains(null)) {
+            throw new IllegalArgumentException("Tag id must not be null");
         }
-        return tags;
+        List<Tag> found = tagRepository.findAllById(tagIds);
+        if (found.size() != tagIds.size()) {
+            throw new EntityNotFoundException("One or more tags not found");
+        }
+        for (Tag tag : found) {
+            if (tag.getType() != expectedType) {
+                throw new IllegalArgumentException(
+                        "Tag " + tag.getId() + " (" + tag.getName() + ") is not a "
+                                + expectedType.name().toLowerCase() + " tag");
+            }
+        }
+        return new HashSet<>(found);
     }
 
     private RecipeIngredient toRecipeIngredient(RecipeIngredientRequest request) {
