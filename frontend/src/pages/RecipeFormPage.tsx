@@ -52,6 +52,7 @@ export function RecipeFormPage() {
         stateCondition: ingredient.stateCondition,
         stateConditionOther: ingredient.stateConditionOther ?? '',
         notes: ingredient.notes ?? '',
+        isEditing: false,
       })),
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps

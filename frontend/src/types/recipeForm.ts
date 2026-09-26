@@ -9,6 +9,9 @@ export interface RecipeIngredientRow {
   stateCondition: StateCondition | null
   stateConditionOther: string
   notes: string
+  // UI-only, never sent to the backend -- whether this row shows its full editor form or
+  // the compact "amount unit, ingredient, cut type, state condition, notes" summary line.
+  isEditing: boolean
 }
 
 export interface RecipeFormValues {
@@ -29,6 +32,7 @@ export const emptyIngredientRow = (): RecipeIngredientRow => ({
   stateCondition: null,
   stateConditionOther: '',
   notes: '',
+  isEditing: true,
 })
 
 export const emptyRecipeFormValues: RecipeFormValues = {
