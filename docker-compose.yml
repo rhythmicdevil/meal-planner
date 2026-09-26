@@ -1,6 +1,7 @@
 services:
   db:
-    image: mysql:8
+    # Pinned 2026-09-26 -- MySQL 8.4.11.
+    image: mysql:8@sha256:0744ee5ef89ce6ccfa13de3e579fe6b9e27f93dd70da9c06d2c908b1b193fb8d
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: ${DB_NAME:-meal_planner}
