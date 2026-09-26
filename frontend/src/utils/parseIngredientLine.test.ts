@@ -16,6 +16,12 @@ describe('parseIngredientLine', () => {
     ])
   })
 
+  it('recognizes the unit when a comma immediately follows it, no space ("1 oz, butter, divided")', () => {
+    expect(parseIngredientLine('1 oz, butter, divided', [])).toMatchObject([
+      { amount: 1, unit: 'oz', name: 'butter', notes: 'divided' },
+    ])
+  })
+
   it('parses a unicode fraction amount', () => {
     expect(parseIngredientLine('½ teaspoon salt', [])).toMatchObject([
       { amount: 0.5, unit: 'tsp', name: 'salt', notes: '' },

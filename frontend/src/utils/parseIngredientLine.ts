@@ -275,7 +275,11 @@ function parseUnitAndRemainder(rest: string): { unit: string; remainder: string 
   const trimmed = rest.trim()
   const firstSpace = trimmed.indexOf(' ')
   const firstWord = firstSpace === -1 ? trimmed : trimmed.slice(0, firstSpace)
-  const normalized = firstWord.toLowerCase().replace(/\.$/, '')
+  // Strips a trailing period ("oz.") or comma ("oz," from a "1 oz, butter, divided"-style
+  // line) before checking against KNOWN_UNITS -- without this, a unit immediately followed
+  // by a comma (no space) never matches, and the whole line falls through to being read as
+  // an unparsed name+notes with the unit word wrongly taken as the ingredient name.
+  const normalized = firstWord.toLowerCase().replace(/[.,]$/, '')
 
   if (firstWord && KNOWN_UNITS.has(normalized)) {
     const remainder = firstSpace === -1 ? '' : trimmed.slice(firstSpace + 1).trim()
