@@ -5,7 +5,7 @@ import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { ApiRequestError } from '../api/client'
 import { useCreateRecipe, useRecipe, useUpdateRecipe } from '../api/recipes'
-import { useCreateTag, useTags } from '../api/tags'
+import { useCreateTag, useDeleteTag, useTags } from '../api/tags'
 import type { ImportedRecipe, RecipeRequest, Tag, TagType } from '../api/types'
 import { RecipeIngredientsEditor } from '../components/RecipeIngredientsEditor'
 import { RecipeStepsEditor } from '../components/RecipeStepsEditor'
@@ -15,11 +15,17 @@ import { emptyRecipeFormValues, type RecipeFormValues } from '../types/recipeFor
 // field) against the catalog, creating any that don't already exist as a tag of the given
 // type -- mirrors how bulk-pasted ingredients auto-create an unmatched catalog entry.
 // createdByName guards against creating the same brand-new name twice in one submit.
+// Newly-created ids are pushed onto the caller-supplied createdIds accumulator as each create
+// completes (rather than only being reported in the return value) so that if a *later* name in
+// this same list fails to create, the ids already created earlier in the loop are still known
+// to the caller -- otherwise a partial failure partway through one list would silently orphan
+// those already-created tags with no way to roll them back.
 async function resolveTagIds(
   names: string[],
   type: TagType,
   catalog: Tag[],
   createTag: (name: string) => Promise<Tag>,
+  createdIds: number[],
 ): Promise<number[]> {
   const createdByName = new Map<string, number>()
   const ids: number[] = []
@@ -38,6 +44,7 @@ async function resolveTagIds(
     } else {
       id = (await createTag(name)).id
       createdByName.set(key, id)
+      createdIds.push(id)
     }
 
     if (!ids.includes(id)) {
@@ -60,6 +67,7 @@ export function RecipeFormPage() {
   const createRecipe = useCreateRecipe()
   const updateRecipe = useUpdateRecipe(id ?? '')
   const createTag = useCreateTag()
+  const deleteTag = useDeleteTag()
 
   const cuisineNameSuggestions = tags.filter((tag) => tag.type === 'CUISINE').map((tag) => tag.name)
   const descriptiveNameSuggestions = tags.filter((tag) => tag.type === 'DESCRIPTIVE').map((tag) => tag.name)
@@ -137,19 +145,29 @@ export function RecipeFormPage() {
   const isSaving = createRecipe.isPending || updateRecipe.isPending
 
   const handleSubmit = form.onSubmit(async (values) => {
+    const createTagOfType = (type: TagType) => (name: string) => createTag.mutateAsync({ name, type })
+    // createdTagIds is shared by both calls below and populated as tags are created (not just
+    // from the final return value) so a create that fails partway through either list still
+    // leaves every tag created before it, in either list, available for rollback in the catch.
+    // allSettled (rather than all) so that if one of the two tag lists fails to resolve, the
+    // other still runs to completion instead of Promise.all abandoning it mid-flight.
+    const createdTagIds: number[] = []
+    const results = await Promise.allSettled([
+      resolveTagIds(values.cuisineTagNames, 'CUISINE', tags, createTagOfType('CUISINE'), createdTagIds),
+      resolveTagIds(values.descriptiveTagNames, 'DESCRIPTIVE', tags, createTagOfType('DESCRIPTIVE'), createdTagIds),
+    ])
+
     try {
-      const createTagOfType = (type: TagType) => (name: string) => createTag.mutateAsync({ name, type })
-      const [cuisineIds, descriptiveIds] = await Promise.all([
-        resolveTagIds(values.cuisineTagNames, 'CUISINE', tags, createTagOfType('CUISINE')),
-        resolveTagIds(values.descriptiveTagNames, 'DESCRIPTIVE', tags, createTagOfType('DESCRIPTIVE')),
-      ])
+      const [cuisineOutcome, descriptiveOutcome] = results
+      if (cuisineOutcome.status === 'rejected') throw cuisineOutcome.reason
+      if (descriptiveOutcome.status === 'rejected') throw descriptiveOutcome.reason
 
       const request: RecipeRequest = {
         name: values.name.trim(),
         sourceUrl: values.sourceUrl.trim() || null,
         servings: values.servings === '' ? null : values.servings,
-        cuisineTagIds: cuisineIds,
-        descriptiveTagIds: descriptiveIds,
+        cuisineTagIds: cuisineOutcome.value,
+        descriptiveTagIds: descriptiveOutcome.value,
         steps: values.steps.map((stepText, index) => ({ stepNumber: index + 1, stepText })),
         ingredients: values.ingredients.map((row) => ({
           ingredientId: row.ingredientId as number,
@@ -169,6 +187,14 @@ export function RecipeFormPage() {
       notifications.show({ message: isEdit ? 'Recipe updated' : 'Recipe created', color: 'green' })
       navigate(`/recipes/${saved.id}`)
     } catch (err) {
+      // Best-effort cleanup: this submit attempt failed (either a tag failed to resolve, or
+      // the recipe itself failed to save) after already creating brand-new tags for the other
+      // field or earlier in the request. Delete those now rather than leaving them stranded,
+      // unused, in the tag catalog.
+      if (createdTagIds.length > 0) {
+        await Promise.allSettled(createdTagIds.map((tagId) => deleteTag.mutateAsync(tagId)))
+      }
+
       if (err instanceof ApiRequestError) {
         if (err.fieldErrors) {
           form.setErrors(err.fieldErrors)

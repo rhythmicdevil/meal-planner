@@ -9,6 +9,7 @@ import com.rhythmicdevil.menu_planner.recipe.CutType;
 import com.rhythmicdevil.menu_planner.recipe.Recipe;
 import com.rhythmicdevil.menu_planner.recipe.RecipeIngredient;
 import com.rhythmicdevil.menu_planner.recipe.StateCondition;
+import com.rhythmicdevil.menu_planner.recipe.dto.RecipeSummary;
 import com.rhythmicdevil.menu_planner.shoppinglist.dto.ShoppingListItemResponse;
 import com.rhythmicdevil.menu_planner.shoppinglist.dto.ShoppingListStapleItemResponse;
 import com.rhythmicdevil.menu_planner.staplegroup.StapleGroup;
@@ -114,6 +115,27 @@ class ShoppingListServiceTest {
         assertThat(item.toTaste()).isTrue();
         assertThat(item.totalAmount()).isNull();
         assertThat(item.unit()).isNull();
+    }
+
+    @Test
+    void mergesAToTasteUseOfAnIngredientIntoItsQuantifiedLineInsteadOfShowingBoth() {
+        Ingredient pepperFlakes = ingredient("crushed red pepper flakes");
+
+        RecipeIngredient quantified = rawLine(pepperFlakes, "1", "tsp");
+        Recipe soup = recipeWith("Soup", quantified);
+
+        RecipeIngredient toTaste = new RecipeIngredient(pepperFlakes, null, null);
+        toTaste.setStateCondition(StateCondition.RAW);
+        Recipe pasta = recipeWith("Pasta", toTaste);
+
+        List<ShoppingListItemResponse> items = ShoppingListService.computeItems(List.of(soup, pasta));
+
+        assertThat(items).hasSize(1);
+        ShoppingListItemResponse item = items.get(0);
+        assertThat(item.toTaste()).isFalse();
+        assertThat(item.totalAmount()).isEqualByComparingTo("1");
+        assertThat(item.unit()).isEqualTo("tsp");
+        assertThat(item.sourceRecipes()).extracting(RecipeSummary::name).containsExactlyInAnyOrder("Soup", "Pasta");
     }
 
     @Test

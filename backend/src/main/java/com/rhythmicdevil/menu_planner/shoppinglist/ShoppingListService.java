@@ -106,6 +106,20 @@ public class ShoppingListService {
             }
         }
 
+        // An ingredient that's "to taste" in one recipe and has a real quantity in another
+        // shouldn't produce two separate lines -- there's already something to buy for it, so
+        // fold the to-taste recipe(s) in as additional sourceRecipes on every quantified
+        // bucket for that ingredient, and only keep an entry in toTasteSources (to emit as
+        // its own to-taste-only line below) when no quantified bucket exists for it at all.
+        Set<Ingredient> quantifiedIngredients = buckets.values().stream().map(b -> b.ingredient).collect(Collectors.toSet());
+        for (Bucket bucket : buckets.values()) {
+            Set<Recipe> toTasteAlso = toTasteSources.get(bucket.ingredient);
+            if (toTasteAlso != null) {
+                bucket.sourceRecipes.addAll(toTasteAlso);
+            }
+        }
+        toTasteSources.keySet().removeAll(quantifiedIngredients);
+
         List<ShoppingListItemResponse> items = new ArrayList<>();
 
         for (Bucket bucket : buckets.values()) {

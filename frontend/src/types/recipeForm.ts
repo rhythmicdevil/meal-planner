@@ -19,8 +19,8 @@ export interface RecipeFormValues {
   sourceUrl: string
   servings: number | ''
   // Plain tag names, exactly like the old freeform tags field -- resolved against the tag
-  // catalog (creating any that don't exist yet) only at submit time. cuisineTagNames is
-  // capped to one entry (TagsInput maxTags={1}).
+  // catalog (creating any that don't exist yet) only at submit time. Both fields are
+  // unlimited -- a recipe can have more than one cuisine (e.g. "Tex-Mex" + "American").
   cuisineTagNames: string[]
   descriptiveTagNames: string[]
   steps: string[]
