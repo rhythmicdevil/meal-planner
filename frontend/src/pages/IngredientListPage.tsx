@@ -20,6 +20,7 @@ import { notifications } from '@mantine/notifications'
 import { ApiRequestError } from '../api/client'
 import { useDeleteIngredient, useIngredients } from '../api/ingredients'
 import { useRecipes } from '../api/recipes'
+import { useStapleGroups } from '../api/stapleGroups'
 import {
   INGREDIENT_CATEGORIES,
   INGREDIENT_CATEGORY_LABELS,
@@ -47,6 +48,7 @@ const ingredientComparators: Record<IngredientSortKey, (a: Ingredient, b: Ingred
 export function IngredientListPage() {
   const { data: ingredients, isLoading, isError } = useIngredients()
   const { data: recipes } = useRecipes()
+  const { data: stapleGroups } = useStapleGroups()
   const deleteIngredient = useDeleteIngredient()
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<IngredientCategory | null>(null)
@@ -93,7 +95,7 @@ export function IngredientListPage() {
     }
   }
 
-  const orphaned = findOrphanedIngredients(ingredients ?? [], recipes ?? [])
+  const orphaned = findOrphanedIngredients(ingredients ?? [], recipes ?? [], stapleGroups ?? [])
 
   const openOrphanModal = () => {
     setSelectedOrphanIds(new Set())
@@ -128,17 +130,30 @@ export function IngredientListPage() {
     setIsBulkDeleting(false)
     setSelectedOrphanIds(new Set())
 
-    const failedCount = results.filter((result) => result.status === 'rejected').length
-    const succeededCount = results.length - failedCount
-    if (failedCount === 0) {
+    const failures = results.filter(
+      (result): result is PromiseRejectedResult => result.status === 'rejected',
+    )
+    const succeededCount = results.length - failures.length
+    if (failures.length === 0) {
       notifications.show({ message: `Deleted ${succeededCount} ingredient${succeededCount === 1 ? '' : 's'}.`, color: 'green' })
       setOrphanModalOpen(false)
     } else {
+      // Show each failure's real backend reason rather than assuming why it failed --
+      // a blocked delete can be due to a recipe or a staple item, and guessing wrong
+      // sends the user looking in the wrong place.
+      const reasons = [
+        ...new Set(
+          failures.map((result) =>
+            result.reason instanceof ApiRequestError ? result.reason.message : 'Something went wrong',
+          ),
+        ),
+      ]
       notifications.show({
         message:
           `Deleted ${succeededCount} ingredient${succeededCount === 1 ? '' : 's'}. ` +
-          `${failedCount} couldn't be deleted -- still referenced by a recipe.`,
+          `${failures.length} couldn't be deleted: ${reasons.join(' ')}`,
         color: 'yellow',
+        autoClose: false,
       })
     }
   }
@@ -274,7 +289,7 @@ export function IngredientListPage() {
       <Modal opened={orphanModalOpen} onClose={() => setOrphanModalOpen(false)} title="Orphaned ingredients" size="md">
         <Stack>
           <Text size="sm" c="dimmed">
-            Ingredients not used by any recipe.
+            Ingredients not used by any recipe or staple item.
           </Text>
           {orphaned.length === 0 ? (
             <Text c="dimmed">No orphaned ingredients found.</Text>
