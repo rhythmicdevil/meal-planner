@@ -1,7 +1,11 @@
 import type { CutType, StateCondition } from '../api/types'
 
+// Every row here is always fully resolved to a real catalog ingredient -- rows the paste
+// parser can't match (and can't auto-create) are surfaced in a notification and never added,
+// rather than kept around half-filled-in for a per-row form to fix (there is none anymore;
+// see RecipeIngredientsEditor).
 export interface RecipeIngredientRow {
-  ingredientId: number | null
+  ingredientId: number
   amount: number | ''
   unit: string
   cutType: CutType | null
@@ -9,9 +13,6 @@ export interface RecipeIngredientRow {
   stateCondition: StateCondition | null
   stateConditionOther: string
   notes: string
-  // UI-only, never sent to the backend -- whether this row shows its full editor form or
-  // the compact "amount unit, ingredient, cut type, state condition, notes" summary line.
-  isEditing: boolean
 }
 
 export interface RecipeFormValues {
@@ -26,18 +27,6 @@ export interface RecipeFormValues {
   steps: string[]
   ingredients: RecipeIngredientRow[]
 }
-
-export const emptyIngredientRow = (): RecipeIngredientRow => ({
-  ingredientId: null,
-  amount: '',
-  unit: '',
-  cutType: null,
-  cutTypeOther: '',
-  stateCondition: null,
-  stateConditionOther: '',
-  notes: '',
-  isEditing: true,
-})
 
 export const emptyRecipeFormValues: RecipeFormValues = {
   name: '',

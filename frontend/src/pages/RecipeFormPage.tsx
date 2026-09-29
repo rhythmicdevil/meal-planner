@@ -77,10 +77,9 @@ export function RecipeFormPage() {
     initialValues: emptyRecipeFormValues,
     validate: {
       name: (value) => (value.trim() ? null : 'Name is required'),
-      ingredients: {
-        // amount/unit are intentionally not required — a "to taste" ingredient has no fixed quantity.
-        ingredientId: (value) => (value ? null : 'Select an ingredient'),
-      },
+      // amount/unit are intentionally not required — a "to taste" ingredient has no fixed
+      // quantity. ingredientId needs no validation here -- RecipeIngredientsEditor only ever
+      // commits fully-resolved rows to begin with.
     },
   })
 
@@ -104,7 +103,6 @@ export function RecipeFormPage() {
         stateCondition: ingredient.stateCondition,
         stateConditionOther: ingredient.stateConditionOther ?? '',
         notes: ingredient.notes ?? '',
-        isEditing: false,
       })),
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -170,7 +168,7 @@ export function RecipeFormPage() {
         descriptiveTagIds: descriptiveOutcome.value,
         steps: values.steps.map((stepText, index) => ({ stepNumber: index + 1, stepText })),
         ingredients: values.ingredients.map((row) => ({
-          ingredientId: row.ingredientId as number,
+          ingredientId: row.ingredientId,
           amount: row.amount === '' ? null : row.amount,
           unit: row.unit.trim() || null,
           cutType: row.cutType,

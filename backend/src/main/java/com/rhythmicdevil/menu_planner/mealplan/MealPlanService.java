@@ -58,6 +58,52 @@ public class MealPlanService {
         return MealPlanResponse.from(mealPlan);
     }
 
+    // Appends a single item without disturbing the rest -- used by the "Add to Meal Plan"
+    // quick-add affordance on the Recipe list/detail views, which only knows the one recipe
+    // it wants to add and shouldn't need to fetch and resubmit the whole plan (update()'s
+    // full-replace semantics) just to do that.
+    //
+    // Rejects a duplicate (same recipe/menu/staple group already on this plan) -- this is a
+    // guard against an accidental double-click on the quick-add button, not a general "no
+    // repeats" rule for meal plans: the full plan editor (update(), above) still allows the
+    // same recipe to be added more than once on purpose, e.g. cooking it twice in one week
+    // (see MealPlan.flattenRecipes()'s note on why that's intentionally not deduped there).
+    public MealPlanResponse addItem(Long mealPlanId, MealPlanItemRequest request) {
+        // Locked fetch (rather than getOrThrow()) so the hasItem() check below and the insert
+        // it guards are atomic with respect to another concurrent addItem() on this same plan --
+        // see MealPlanRepository.findByIdForUpdate().
+        MealPlan mealPlan = mealPlanRepository.findByIdForUpdate(mealPlanId)
+                .orElseThrow(() -> new EntityNotFoundException("MealPlan " + mealPlanId + " not found"));
+        MealPlanItem item = toMealPlanItem(mealPlan, request);
+        if (mealPlan.hasItem(item)) {
+            throw new IllegalArgumentException(alreadyInPlanMessage(item) + " is already in this meal plan.");
+        }
+        mealPlan.addItem(item);
+        // Flush so the new item's identity-generated id is populated before it's serialized --
+        // otherwise the response would report it as null until the next fetch.
+        mealPlanRepository.flush();
+        return MealPlanResponse.from(mealPlan);
+    }
+
+    private String alreadyInPlanMessage(MealPlanItem item) {
+        return switch (item.getItemType()) {
+            case RECIPE -> "\"" + item.getRecipe().getName() + "\"";
+            case MENU -> "\"" + item.getMenu().getName() + "\"";
+            case STAPLE_GROUP -> "\"" + item.getStapleGroup().getName() + "\"";
+        };
+    }
+
+    // Counterpart to addItem() -- removes one item by id without touching the rest of the
+    // plan. Used by the same Recipe list quick-add affordance to let a recipe be removed from,
+    // or moved to a different, meal plan without opening that plan's own full editor.
+    public MealPlanResponse removeItem(Long mealPlanId, Long itemId) {
+        MealPlan mealPlan = getOrThrow(mealPlanId);
+        if (!mealPlan.removeItem(itemId)) {
+            throw new EntityNotFoundException("MealPlanItem " + itemId + " not found in MealPlan " + mealPlanId);
+        }
+        return MealPlanResponse.from(mealPlan);
+    }
+
     public void delete(Long id) {
         if (!mealPlanRepository.existsById(id)) {
             throw new EntityNotFoundException("MealPlan " + id + " not found");

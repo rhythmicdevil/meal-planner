@@ -1,10 +1,15 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Alert, Anchor, Badge, Button, Group, Loader, MultiSelect, Stack, Table, Text, TextInput, Title } from '@mantine/core'
+import { useMealPlans } from '../api/mealPlans'
 import { useRecipes } from '../api/recipes'
 import type { Recipe } from '../api/types'
+import { RecipeMealPlanCell } from '../components/RecipeMealPlanCell'
 import { SortableTh } from '../components/SortableTh'
 import { useSort } from '../hooks/useSort'
+import { groupRecipeMealPlanAssignmentsByRecipe, type RecipeMealPlanAssignment } from '../utils/findRecipeMealPlanAssignments'
+
+const EMPTY_ASSIGNMENTS: RecipeMealPlanAssignment[] = []
 
 type RecipeSortKey = 'name' | 'servings' | 'cuisine'
 
@@ -18,6 +23,10 @@ const recipeComparators: Record<RecipeSortKey, (a: Recipe, b: Recipe) => number>
 
 export function RecipeListPage() {
   const { data: recipes, isLoading, isError } = useRecipes()
+  const { data: mealPlans = [] } = useMealPlans()
+  // Built once for the whole table (one pass over every meal plan's items) rather than each
+  // row's RecipeMealPlanCell separately re-scanning every meal plan just for its own recipe.
+  const assignmentsByRecipe = useMemo(() => groupRecipeMealPlanAssignmentsByRecipe(mealPlans), [mealPlans])
   const [search, setSearch] = useState('')
   const [cuisineTags, setCuisineTags] = useState<string[]>([])
   const [descriptiveTags, setDescriptiveTags] = useState<string[]>([])
@@ -114,6 +123,7 @@ export function RecipeListPage() {
                 onSort={onSort}
               />
               <Table.Th>Tags</Table.Th>
+              <Table.Th>Meal Plan</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -142,6 +152,14 @@ export function RecipeListPage() {
                       </Badge>
                     ))}
                   </Group>
+                </Table.Td>
+                <Table.Td>
+                  <RecipeMealPlanCell
+                    recipeId={recipe.id}
+                    recipeName={recipe.name}
+                    mealPlans={mealPlans}
+                    assignments={assignmentsByRecipe.get(recipe.id) ?? EMPTY_ASSIGNMENTS}
+                  />
                 </Table.Td>
               </Table.Tr>
             ))}

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button, Group, Modal, Stack, Text, Textarea } from '@mantine/core'
 
 interface BulkPasteModalProps {
@@ -8,6 +8,12 @@ interface BulkPasteModalProps {
   description?: string
   placeholder?: string
   onSubmit: (text: string) => void | Promise<void>
+  // Pre-fills the textarea when the modal opens -- used to show an existing recipe's
+  // ingredients as editable text instead of starting from a blank box. Re-seeded every time
+  // the modal transitions to open (not on every parent re-render), so editing in progress
+  // isn't stomped if the parent happens to re-render while the modal is still up.
+  initialText?: string
+  submitLabel?: string
 }
 
 export function BulkPasteModal({
@@ -17,13 +23,19 @@ export function BulkPasteModal({
   description,
   placeholder,
   onSubmit,
+  initialText = '',
+  submitLabel = 'Add',
 }: BulkPasteModalProps) {
-  const [text, setText] = useState('')
+  const [text, setText] = useState(initialText)
   const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (opened) setText(initialText)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opened])
 
   const handleClose = () => {
     if (submitting) return
-    setText('')
     onClose()
   }
 
@@ -31,7 +43,6 @@ export function BulkPasteModal({
     setSubmitting(true)
     try {
       await onSubmit(text)
-      setText('')
       onClose()
     } finally {
       setSubmitting(false)
@@ -59,8 +70,12 @@ export function BulkPasteModal({
           <Button variant="default" onClick={handleClose} disabled={submitting}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={!text.trim()} loading={submitting}>
-            Add
+          {/* Not gated on non-empty text: this modal doubles as a full-list editor
+              (submitLabel="Save") where submitting an emptied box is the only way to clear
+              every row -- blocking that here would make it impossible to remove the last
+              ingredient/step through the UI. */}
+          <Button onClick={handleSubmit} disabled={submitting} loading={submitting}>
+            {submitLabel}
           </Button>
         </Group>
       </Stack>

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiFetch } from './client'
-import type { MealPlan, MealPlanRequest, PrepList, ShoppingList } from './types'
+import type { MealPlan, MealPlanItemRequest, MealPlanRequest, PrepList, ShoppingList } from './types'
 
 const MEAL_PLANS_KEY = ['mealPlans']
 const mealPlanKey = (id: number | string) => ['mealPlans', String(id)]
@@ -63,6 +63,33 @@ export function useUpdateMealPlan(id: number | string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: MEAL_PLANS_KEY })
       queryClient.invalidateQueries({ queryKey: mealPlanKey(id) })
+    },
+  })
+}
+
+export function useAddMealPlanItem() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ mealPlanId, item }: { mealPlanId: number | string; item: MealPlanItemRequest }) =>
+      apiFetch<MealPlan>(`/api/meal-plans/${mealPlanId}/items`, {
+        method: 'POST',
+        body: JSON.stringify(item),
+      }),
+    onSuccess: (_, { mealPlanId }) => {
+      queryClient.invalidateQueries({ queryKey: MEAL_PLANS_KEY })
+      queryClient.invalidateQueries({ queryKey: mealPlanKey(mealPlanId) })
+    },
+  })
+}
+
+export function useRemoveMealPlanItem() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ mealPlanId, itemId }: { mealPlanId: number | string; itemId: number }) =>
+      apiFetch<MealPlan>(`/api/meal-plans/${mealPlanId}/items/${itemId}`, { method: 'DELETE' }),
+    onSuccess: (_, { mealPlanId }) => {
+      queryClient.invalidateQueries({ queryKey: MEAL_PLANS_KEY })
+      queryClient.invalidateQueries({ queryKey: mealPlanKey(mealPlanId) })
     },
   })
 }

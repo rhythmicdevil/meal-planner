@@ -169,6 +169,14 @@ const KNOWN_UNITS = new Set([
   'stalks',
   'bulb',
   'bulbs',
+  'bag',
+  'bags',
+  // The abbreviations normalizeUnit() itself produces for quart/pint/gallon -- without these,
+  // a unit this parser already normalized to "qt"/"pt"/"gal" (e.g. read back out of a saved
+  // recipe) wouldn't be recognized as a unit on a second pass.
+  'qt',
+  'pt',
+  'gal',
 ])
 
 // Canonical shorthand for units that have a standard abbreviation -- e.g. "tablespoon(s)"
@@ -567,7 +575,26 @@ function defaultPepperState(name: string): { stateCondition: StateCondition | nu
 function extractCutTypeAndClean(
   rawName: string,
   rawNotes: string,
+  catalog: Ingredient[],
 ): { name: string; cutType: CutType | null; notes: string; stateCondition: StateCondition | null; stateConditionOther: string | null } {
+  // If the name, exactly as given, already matches a catalog ingredient (or alias), trust it
+  // completely rather than running the descriptor-stripping heuristics below -- those exist
+  // to clean up *raw* recipe text ("1 large diced onion"), and would otherwise mangle an
+  // already-canonical name that happens to start with a word they treat as a descriptor (real
+  // catalog entries here include "diced tomatoes", "dried thyme leaves", "fresh basil leaves",
+  // "peeled tomatoes" -- each would silently get renamed and handed a fabricated cutType
+  // every time serializeIngredientLine round-trips it back through this parser on a save).
+  if (matchCatalogIngredient(rawName, catalog) !== null) {
+    const { cutType: suffixCutType, leftover: suffixLeftover } = extractCutTypeFromNotes(rawNotes)
+    const finalName = rawName.trim().toLowerCase()
+    return {
+      name: finalName,
+      cutType: suffixCutType,
+      notes: suffixLeftover,
+      ...defaultPepperState(finalName),
+    }
+  }
+
   const { name, cutType: prefixCutType, leftovers } = stripLeadingDescriptors(rawName)
   const { cutType: suffixCutType, leftover: suffixLeftover } = extractCutTypeFromNotes(rawNotes)
   // Catalog ingredient names are always lowercase, regardless of how the source recipe
@@ -612,6 +639,7 @@ export function parseIngredientLine(line: string, catalog: Ingredient[]): Parsed
       const { name, cutType, notes, stateCondition, stateConditionOther } = extractCutTypeAndClean(
         purposeStripped.name,
         mergeNotes([stripped.notes, purposeStripped.clause]),
+        catalog,
       )
       return {
         raw,
@@ -652,6 +680,7 @@ export function parseIngredientLine(line: string, catalog: Ingredient[]): Parsed
       const { name, cutType, notes, stateCondition, stateConditionOther } = extractCutTypeAndClean(
         purposeStripped.name,
         mergeNotes([stripped.notes, purposeStripped.clause]),
+        catalog,
       )
       return {
         raw,
@@ -673,6 +702,7 @@ export function parseIngredientLine(line: string, catalog: Ingredient[]): Parsed
   const { name, cutType, notes, stateCondition, stateConditionOther } = extractCutTypeAndClean(
     purposeStripped.name,
     mergeNotes([stripped.notes, purposeStripped.clause]),
+    catalog,
   )
 
   return [

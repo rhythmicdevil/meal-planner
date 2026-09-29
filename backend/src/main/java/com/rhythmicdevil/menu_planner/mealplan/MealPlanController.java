@@ -1,5 +1,6 @@
 package com.rhythmicdevil.menu_planner.mealplan;
 
+import com.rhythmicdevil.menu_planner.mealplan.dto.MealPlanItemRequest;
 import com.rhythmicdevil.menu_planner.mealplan.dto.MealPlanRequest;
 import com.rhythmicdevil.menu_planner.mealplan.dto.MealPlanResponse;
 import com.rhythmicdevil.menu_planner.preplist.PrepListService;
@@ -63,6 +64,16 @@ public class MealPlanController {
     @PutMapping("/{id}")
     public MealPlanResponse update(@PathVariable Long id, @Valid @RequestBody MealPlanRequest request) {
         return mealPlanService.update(id, request);
+    }
+
+    @PostMapping("/{id}/items")
+    public MealPlanResponse addItem(@PathVariable Long id, @Valid @RequestBody MealPlanItemRequest request) {
+        return mealPlanService.addItem(id, request);
+    }
+
+    @DeleteMapping("/{id}/items/{itemId}")
+    public MealPlanResponse removeItem(@PathVariable Long id, @PathVariable Long itemId) {
+        return mealPlanService.removeItem(id, itemId);
     }
 
     @DeleteMapping("/{id}")

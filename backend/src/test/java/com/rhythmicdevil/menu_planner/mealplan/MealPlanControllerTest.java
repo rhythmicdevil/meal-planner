@@ -122,6 +122,100 @@ class MealPlanControllerTest extends AbstractApiTest {
     }
 
     @Test
+    void addItemEndpoint_appendsRecipeWithoutDisturbingExistingItems() throws Exception {
+        Recipe pancakes = recipeRepository.save(new Recipe("Pancakes"));
+        Recipe waffles = recipeRepository.save(new Recipe("Waffles"));
+
+        MealPlanRequest request = new MealPlanRequest(
+                "This Week", null, null,
+                List.of(new MealPlanItemRequest(MealPlanItemType.RECIPE, pancakes.getId(), null, null)));
+
+        String createResponse = mockMvc.perform(authenticated(post("/api/meal-plans"))
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        Long mealPlanId = objectMapper.readTree(createResponse).get("id").asLong();
+
+        MealPlanItemRequest addRequest = new MealPlanItemRequest(MealPlanItemType.RECIPE, waffles.getId(), null, null);
+
+        mockMvc.perform(authenticated(post("/api/meal-plans/" + mealPlanId + "/items"))
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(addRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(2))
+                .andExpect(jsonPath("$.items[0].recipe.name").value("Pancakes"))
+                .andExpect(jsonPath("$.items[1].recipe.name").value("Waffles"))
+                .andExpect(jsonPath("$.items[1].id").isNotEmpty());
+    }
+
+    @Test
+    void addItemEndpoint_rejectsRecipeAlreadyOnThePlan() throws Exception {
+        Recipe pancakes = recipeRepository.save(new Recipe("Pancakes"));
+
+        MealPlanRequest request = new MealPlanRequest(
+                "This Week", null, null,
+                List.of(new MealPlanItemRequest(MealPlanItemType.RECIPE, pancakes.getId(), null, null)));
+
+        String createResponse = mockMvc.perform(authenticated(post("/api/meal-plans"))
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        Long mealPlanId = objectMapper.readTree(createResponse).get("id").asLong();
+
+        MealPlanItemRequest addRequest = new MealPlanItemRequest(MealPlanItemType.RECIPE, pancakes.getId(), null, null);
+
+        mockMvc.perform(authenticated(post("/api/meal-plans/" + mealPlanId + "/items"))
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(addRequest)))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(authenticated(get("/api/meal-plans/" + mealPlanId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(1));
+    }
+
+    @Test
+    void removeItemEndpoint_removesOnlyThatItem() throws Exception {
+        Recipe pancakes = recipeRepository.save(new Recipe("Pancakes"));
+        Recipe waffles = recipeRepository.save(new Recipe("Waffles"));
+
+        MealPlanRequest request = new MealPlanRequest(
+                "This Week", null, null,
+                List.of(
+                        new MealPlanItemRequest(MealPlanItemType.RECIPE, pancakes.getId(), null, null),
+                        new MealPlanItemRequest(MealPlanItemType.RECIPE, waffles.getId(), null, null)));
+
+        String createResponse = mockMvc.perform(authenticated(post("/api/meal-plans"))
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        Long mealPlanId = objectMapper.readTree(createResponse).get("id").asLong();
+        Long pancakesItemId = objectMapper.readTree(createResponse).get("items").get(0).get("id").asLong();
+
+        mockMvc.perform(authenticated(delete("/api/meal-plans/" + mealPlanId + "/items/" + pancakesItemId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].recipe.name").value("Waffles"));
+    }
+
+    @Test
+    void removeItemEndpoint_forUnknownItem_isNotFound() throws Exception {
+        MealPlanRequest request = new MealPlanRequest("This Week", null, null, List.of());
+        String createResponse = mockMvc.perform(authenticated(post("/api/meal-plans"))
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        Long mealPlanId = objectMapper.readTree(createResponse).get("id").asLong();
+
+        mockMvc.perform(authenticated(delete("/api/meal-plans/" + mealPlanId + "/items/999999")))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void createWithMenuItem_includesNestedRecipes() throws Exception {
         Recipe tacos = recipeRepository.save(new Recipe("Tacos"));
         Menu tacoNight = new Menu("Taco Night");

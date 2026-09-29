@@ -79,6 +79,40 @@ public class MealPlan {
         items.addAll(newItems);
     }
 
+    public void addItem(MealPlanItem item) {
+        items.add(item);
+    }
+
+    // Removes a single item by id (orphanRemoval on the items relationship deletes its row on
+    // flush) -- used by the Recipe list's per-plan "remove"/"move" affordance, which targets
+    // one specific item rather than rebuilding the whole plan the way update() does. Returns
+    // whether an item was actually found and removed, so the caller can 404 otherwise.
+    public boolean removeItem(Long itemId) {
+        return items.removeIf(item -> item.getId().equals(itemId));
+    }
+
+    // Whether an item referencing the same recipe/menu/staple group as candidate is already
+    // on this plan. Left as a query the caller opts into (see MealPlanService.addItem())
+    // rather than enforced here or in replaceItems() -- the full plan editor intentionally
+    // allows repeats (see flattenRecipes() below), so this collection has no general
+    // uniqueness invariant of its own.
+    public boolean hasItem(MealPlanItem candidate) {
+        for (MealPlanItem existing : items) {
+            if (existing.getItemType() != candidate.getItemType()) {
+                continue;
+            }
+            boolean sameReference = switch (candidate.getItemType()) {
+                case RECIPE -> existing.getRecipe().getId().equals(candidate.getRecipe().getId());
+                case MENU -> existing.getMenu().getId().equals(candidate.getMenu().getId());
+                case STAPLE_GROUP -> existing.getStapleGroup().getId().equals(candidate.getStapleGroup().getId());
+            };
+            if (sameReference) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Not deduped -- the same recipe reached twice (direct + via a menu, or a repeated
     // meal-plan item) means it's being cooked twice, so its ingredients count twice.
     public List<Recipe> flattenRecipes() {

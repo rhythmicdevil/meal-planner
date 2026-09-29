@@ -163,6 +163,18 @@ describe('parseIngredientLine', () => {
     ])
   })
 
+  it('recognizes "bag" as a unit', () => {
+    expect(parseIngredientLine('1 bag quorn bites', [])).toMatchObject([
+      { amount: 1, unit: 'bag', name: 'quorn bites' },
+    ])
+  })
+
+  it('recognizes the "qt"/"pt"/"gal" abbreviations as units, not just their long forms', () => {
+    expect(parseIngredientLine('1 qt vegetable stock', [])).toMatchObject([{ amount: 1, unit: 'qt', name: 'vegetable stock' }])
+    expect(parseIngredientLine('0.5 pt grape tomatoes', [])).toMatchObject([{ amount: 0.5, unit: 'pt', name: 'grape tomatoes' }])
+    expect(parseIngredientLine('1 gal milk', [])).toMatchObject([{ amount: 1, unit: 'gal', name: 'milk' }])
+  })
+
   it('recognizes "bulb(s)" as a unit', () => {
     expect(parseIngredientLine('1 bulb garlic', [])).toMatchObject([{ amount: 1, unit: 'bulb', name: 'garlic' }])
   })
@@ -326,6 +338,52 @@ describe('parseIngredientLine', () => {
   it('matches an existing catalog ingredient by exact name, case-insensitively', () => {
     const [result] = parseIngredientLine('4 cups Cherry Tomatoes', catalog)
     expect(result?.matchedIngredientId).toBe(1)
+  })
+
+  describe('trusts a name that already exactly matches the catalog, skipping descriptor-stripping', () => {
+    // Regression coverage for real catalog entries whose canonical name happens to start
+    // with a word the heuristics below would otherwise treat as a strippable descriptor --
+    // this is exactly what serializeIngredientLine round-trips back through this parser on
+    // every save, so without this guard editing an existing recipe's ingredients (with no
+    // actual changes) would silently rename these and fabricate a cutType for the first one.
+    const nameCatalog: Ingredient[] = [
+      { id: 20, name: 'diced tomatoes', aliases: [], defaultUnit: null, category: 'PRODUCE', stores: [] },
+      { id: 21, name: 'dried thyme leaves', aliases: [], defaultUnit: null, category: 'BAKING_AND_SPICES', stores: [] },
+      { id: 22, name: 'fresh basil leaves', aliases: [], defaultUnit: null, category: 'PRODUCE', stores: [] },
+      { id: 23, name: 'peeled tomatoes', aliases: [], defaultUnit: null, category: 'PRODUCE', stores: [] },
+      // A distinct "tomatoes" entry with no descriptor, to prove the above don't collapse onto it.
+      { id: 24, name: 'tomatoes', aliases: [], defaultUnit: null, category: 'PRODUCE', stores: [] },
+    ]
+
+    it('keeps "diced tomatoes" intact instead of stripping "diced" into a fabricated cutType', () => {
+      expect(parseIngredientLine('1 can diced tomatoes', nameCatalog)).toMatchObject([
+        { name: 'diced tomatoes', cutType: null, matchedIngredientId: 20 },
+      ])
+    })
+
+    it('keeps "dried thyme leaves" intact instead of stripping "dried" into notes', () => {
+      expect(parseIngredientLine('1 tsp dried thyme leaves', nameCatalog)).toMatchObject([
+        { name: 'dried thyme leaves', notes: '', matchedIngredientId: 21 },
+      ])
+    })
+
+    it('keeps "fresh basil leaves" intact instead of stripping "fresh" into notes', () => {
+      expect(parseIngredientLine('1 cup fresh basil leaves', nameCatalog)).toMatchObject([
+        { name: 'fresh basil leaves', notes: '', matchedIngredientId: 22 },
+      ])
+    })
+
+    it('keeps "peeled tomatoes" intact instead of stripping "peeled" into notes', () => {
+      expect(parseIngredientLine('1 can peeled tomatoes', nameCatalog)).toMatchObject([
+        { name: 'peeled tomatoes', notes: '', matchedIngredientId: 23 },
+      ])
+    })
+
+    it('still applies the normal stripping heuristics when there is no exact catalog match', () => {
+      expect(parseIngredientLine('1 can diced tomatoes', [])).toMatchObject([
+        { name: 'tomatoes', cutType: 'DICED', matchedIngredientId: null },
+      ])
+    })
   })
 
   it('matches an existing catalog ingredient by alias', () => {

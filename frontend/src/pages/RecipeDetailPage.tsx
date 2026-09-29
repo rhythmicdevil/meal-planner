@@ -14,6 +14,8 @@ import {
 import { notifications } from '@mantine/notifications'
 import { ApiRequestError } from '../api/client'
 import { useDeleteRecipe, useRecipe } from '../api/recipes'
+import { AddToMealPlanButton } from '../components/AddToMealPlanButton'
+import { numberStepLines } from '../utils/parseStepLine'
 
 export function RecipeDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -51,6 +53,7 @@ export function RecipeDetailPage() {
           )}
         </div>
         <Group>
+          <AddToMealPlanButton recipeId={recipe.id} recipeName={recipe.name} />
           <Button component={Link} to={`/recipes/${recipe.id}/edit`} variant="default">
             Edit
           </Button>
@@ -97,11 +100,13 @@ export function RecipeDetailPage() {
       </List>
 
       <Title order={4}>Steps</Title>
-      <List type="ordered">
-        {recipe.steps.map((step) => (
-          <List.Item key={step.stepNumber}>{step.stepText}</List.Item>
+      <Stack gap={4}>
+        {numberStepLines(recipe.steps.map((step) => step.stepText)).map((line, index) => (
+          <Text key={index} fw={line.isHeading ? 700 : undefined}>
+            {line.isHeading ? line.text : `${line.number}. ${line.text}`}
+          </Text>
         ))}
-      </List>
+      </Stack>
     </Stack>
   )
 }
