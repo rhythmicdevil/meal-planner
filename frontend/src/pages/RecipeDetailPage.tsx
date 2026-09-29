@@ -52,13 +52,16 @@ export function RecipeDetailPage() {
             </Text>
           )}
         </div>
-        <Group>
+        <Group className="no-print">
           <AddToMealPlanButton recipeId={recipe.id} recipeName={recipe.name} />
           <Button component={Link} to={`/recipes/${recipe.id}/edit`} variant="default">
             Edit
           </Button>
           <Button color="red" variant="light" onClick={handleDelete} loading={deleteRecipe.isPending}>
             Delete
+          </Button>
+          <Button variant="default" onClick={() => window.print()}>
+            Print
           </Button>
         </Group>
       </Group>
