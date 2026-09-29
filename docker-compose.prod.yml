@@ -25,8 +25,12 @@ services:
       DB_NAME: ${DB_NAME:-meal_planner}
       DB_USERNAME: ${DB_USERNAME:-meal_planner}
       DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      # HTTP Basic auth on the API is off by default (app is only reachable on the home/
+      # Tailscale network) -- set APP_SECURITY_ENABLED=true in .env, along with a real
+      # APP_USERNAME/APP_PASSWORD, to turn it back on.
+      APP_SECURITY_ENABLED: ${APP_SECURITY_ENABLED:-false}
       APP_USERNAME: ${APP_USERNAME:-admin}
-      APP_PASSWORD: ${APP_PASSWORD:?Set APP_PASSWORD in .env}
+      APP_PASSWORD: ${APP_PASSWORD:-changeme}
     depends_on:
       db:
         condition: service_healthy

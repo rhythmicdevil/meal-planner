@@ -93,13 +93,15 @@ class IngredientControllerTest extends AbstractApiTest {
     }
 
     @Test
-    void createWithoutCredentials_isUnauthorized() throws Exception {
+    void createWithoutCredentials_succeeds() throws Exception {
+        // HTTP Basic auth is off by default (app.security.enabled=false) -- the app is only
+        // reachable on the user's home/Tailscale network, not the open internet.
         IngredientRequest request = new IngredientRequest("yellow onion", null, null, IngredientCategory.PRODUCE, null);
 
         mockMvc.perform(post("/api/ingredients")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isCreated());
     }
 
     @Test

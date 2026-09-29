@@ -45,11 +45,18 @@ class ImportControllerTest extends AbstractApiTest {
     }
 
     @Test
-    void importFromUrl_withoutCredentials_isUnauthorized() throws Exception {
+    void importFromUrl_withoutCredentials_succeeds() throws Exception {
+        // HTTP Basic auth is off by default (app.security.enabled=false) -- the app is only
+        // reachable on the user's home/Tailscale network, not the open internet.
+        RawRecipeDTO parsed = new RawRecipeDTO(
+                "Roasted Tomato Risotto", "https://example.com/risotto", 4,
+                List.of("4 cups cherry tomatoes"), List.of("Roast the tomatoes"), Set.of("dinner"));
+        when(recipeImportAdapter.parse("https://example.com/risotto")).thenReturn(parsed);
+
         mockMvc.perform(post("/api/import/url")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(new RecipeImportRequest("https://example.com/risotto"))))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isOk());
     }
 
     @Test
